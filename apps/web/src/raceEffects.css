@@ -1,0 +1,199 @@
+/* Screen-space feedback remains clear at every 3D quality tier. */
+.race-hud.nitro-active {
+  box-shadow: inset 0 0 72px #87f8ff4a, inset 0 0 165px #9749ff40;
+  animation: nitro-frame-pulse 0.34s ease-in-out infinite alternate;
+}
+
+.race-hud.mini-active {
+  box-shadow: inset 0 0 70px #ffad2930;
+}
+
+.speed-vignette {
+  position: absolute;
+  inset: -24%;
+  overflow: hidden;
+  opacity: calc(var(--speed-intensity) * 0.72);
+  background: repeating-conic-gradient(from 0deg at 50% 57%, transparent 0 7deg, #d8ebf51f 7.35deg 7.65deg, transparent 8deg 16deg);
+  mask: radial-gradient(circle at 50% 57%, transparent 0 32%, #000 72%);
+  transform: scale(calc(0.86 + var(--speed-intensity) * 0.18));
+  animation: road-rush 0.3s linear infinite;
+  pointer-events: none;
+}
+
+.race-hud.has-impact {
+  box-shadow: inset 0 0 calc(35px + var(--collision-pulse) * 110px) #ff5b3638;
+}
+
+.finish-coast-banner {
+  position: absolute;
+  left: 50%;
+  top: 24%;
+  transform: translateX(-50%) skewX(-7deg);
+  min-width: 330px;
+  padding: 15px 34px 13px;
+  text-align: center;
+  background: linear-gradient(100deg, #080b12e8, #f2f2f2ed 48%, #080b12e8 49%);
+  border-block: 2px solid #fff;
+  box-shadow: 0 15px 50px #0009;
+  animation: finish-settle 0.45s cubic-bezier(.2,.9,.3,1) both;
+}
+
+.finish-coast-banner small,
+.finish-coast-banner span {
+  display: block;
+  color: #aab4c0;
+  font: 700 8px "Noto Sans TC";
+  letter-spacing: 2px;
+}
+
+.finish-coast-banner b {
+  display: block;
+  color: #e83249;
+  font: italic 900 48px/.9 "Barlow Condensed";
+  text-shadow: 2px 2px #fff;
+}
+
+.boost-effects {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.boost-effects::before {
+  content: "";
+  position: absolute;
+  inset: -35%;
+  background: repeating-conic-gradient(from 0deg, transparent 0 6deg, #e7fcffb8 6.45deg 6.95deg, #9f60ff8f 7.1deg 7.42deg, transparent 8deg 14deg);
+  mask: radial-gradient(circle at 50% 58%, transparent 0 21%, #000 54%);
+  opacity: 0.86;
+  filter: saturate(1.35) drop-shadow(0 0 7px #5feaff);
+  animation: boost-rush 0.2s linear infinite;
+}
+
+.boost-effects::after {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  background:
+    radial-gradient(circle at 50% 58%, transparent 0 18%, #8df6ff42 19%, transparent 20% 28%, #bd65ff38 29%, transparent 30% 39%, #ffffff24 40%, transparent 41%),
+    linear-gradient(90deg, #35e7ff5c, transparent 17% 83%, #c45cff5c);
+  mix-blend-mode: screen;
+  filter: blur(1px) saturate(1.45);
+  opacity: 0.72;
+  animation: boost-warp 0.42s ease-in-out infinite alternate;
+}
+
+.boost-effects.mini::before {
+  background: repeating-conic-gradient(from 0deg, transparent 0 12deg, #ffd2708a 12.6deg 13.1deg, transparent 14deg 25deg);
+  opacity: 0.5;
+  animation-duration: 0.34s;
+}
+
+.boost-effects.mini::after {
+  background: radial-gradient(circle at 50% 58%, transparent 0 24%, #ffbc4b28 25%, transparent 27% 39%, #ffe4a31c 40%, transparent 42%);
+  opacity: 0.46;
+  animation-duration: 0.58s;
+}
+
+.boost-effects span {
+  position: absolute;
+  left: 50%;
+  bottom: 176px;
+  z-index: 2;
+  transform: translateX(-50%) skewX(-12deg);
+  padding: 4px 19px 5px 23px;
+  border: 1px solid #bdfaffc9;
+  border-inline-width: 4px;
+  background: linear-gradient(90deg, #123e66c7, #5b2d9ee0 50%, #123e66c7);
+  box-shadow: 0 0 15px #56eaffb0, 0 0 42px #a34bff82;
+  font: italic 900 22px "Barlow Condensed";
+  letter-spacing: 6px;
+  color: #eafcff;
+  text-shadow: 0 0 7px #fff, 0 0 17px #33dfff, 0 0 30px #a04bff;
+  animation: boost-label-pulse 0.28s ease-in-out infinite alternate;
+}
+
+.boost-effects.mini span {
+  padding: 2px 12px 3px 16px;
+  border-color: #ffd47db8;
+  border-inline-width: 2px;
+  background: #3b2508b8;
+  box-shadow: 0 0 13px #ff9f2f78;
+  font-size: 18px;
+  letter-spacing: 4px;
+  color: #ffd47d;
+  text-shadow: 0 0 8px #ff9f2f, 0 0 22px #ff9f2f;
+}
+
+.race-hud.is-drifting::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -24px;
+  width: 46%;
+  height: 95px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, #d8e4ed2e 0, transparent 68%);
+  filter: blur(13px);
+  animation: drift-haze 0.45s ease-in-out infinite alternate;
+}
+
+.race-hud.is-drifting::before {
+  content: "DRIFT";
+  position: absolute;
+  left: 50%;
+  bottom: 164px;
+  z-index: 2;
+  transform: translateX(-50%) skewX(-12deg);
+  padding: 4px 14px 3px;
+  color: #ffd7ff;
+  border: 1px solid #e977ffb8;
+  border-inline-width: 4px;
+  background: linear-gradient(90deg, #361345c9, #9c32b9d9, #361345c9);
+  box-shadow: 0 0 12px #dc52ff91, 0 0 32px #9f31d55e;
+  font: italic 900 17px "Barlow Condensed";
+  letter-spacing: 4px;
+  text-shadow: 0 0 9px #fff;
+  animation: drift-callout .28s ease-in-out infinite alternate;
+}
+
+@keyframes boost-rush {
+  from { transform: scale(0.84) rotate(0deg); }
+  to { transform: scale(1.2) rotate(2deg); }
+}
+
+@keyframes boost-warp {
+  from { opacity: .46; transform: scale(.94); }
+  to { opacity: .9; transform: scale(1.08); }
+}
+
+@keyframes boost-label-pulse {
+  from { transform: translateX(-50%) skewX(-12deg) scale(.96); filter: brightness(.92); }
+  to { transform: translateX(-50%) skewX(-12deg) scale(1.06); filter: brightness(1.25); }
+}
+
+@keyframes nitro-frame-pulse {
+  from { box-shadow: inset 0 0 65px #87f8ff38, inset 0 0 140px #9749ff30; }
+  to { box-shadow: inset 0 0 95px #87f8ff5c, inset 0 0 190px #9749ff4d; }
+}
+
+@keyframes drift-haze {
+  from { opacity: 0.32; transform: translateX(-51%) scaleX(0.88); }
+  to { opacity: 0.72; transform: translateX(-49%) scaleX(1.08); }
+}
+
+@keyframes drift-callout {
+  from { opacity: .74; transform: translateX(-50%) skewX(-12deg) scale(.96); }
+  to { opacity: 1; transform: translateX(-50%) skewX(-12deg) scale(1.04); }
+}
+
+@keyframes road-rush {
+  from { rotate: 0deg; scale: 0.94; }
+  to { rotate: 1.5deg; scale: 1.08; }
+}
+
+@keyframes finish-settle {
+  from { opacity: 0; transform: translateX(-50%) translateY(-35px) skewX(-7deg) scale(1.12); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) skewX(-7deg) scale(1); }
+}

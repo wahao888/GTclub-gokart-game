@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Gate.io Formula Demo</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#07152d"/>
+      <stop offset="1" stop-color="#101b3f"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ff3349"/>
+      <stop offset="1" stop-color="#a80622"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="72" fill="url(#bg)"/>
+  <path d="M88 96h214v55H143v210h214V258H238v-55h174v213H88z" fill="#fff"/>
+  <path d="M267 203h145v55H267z" fill="url(#red)"/>
+  <path d="M102 438h308" stroke="#f4c21f" stroke-width="12" stroke-linecap="round"/>
+  <text x="256" y="487" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="39" font-weight="700">Gate.io RACING</text>
+</svg>

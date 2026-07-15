@@ -1,0 +1,90 @@
+/* Heritage motor gallery — luxury hall + performance turntable */
+.garage-page{max-width:1760px;padding-top:30px}
+.garage-heading{margin-bottom:22px;padding:0 2px}
+.garage-heading h1{font-size:48px;letter-spacing:-1px}
+.garage-heading>div:first-child small{color:#c99c59}
+.garage-heading>p{display:flex;align-items:center;margin:0;color:#98a3ad}
+.garage-layout{grid-template-columns:306px minmax(0,1fr);gap:14px;align-items:stretch}
+.vehicle-list{position:relative;gap:0;overflow:hidden;border:1px solid #34404a;background:linear-gradient(180deg,#121920f5,#080d12 80%);box-shadow:0 28px 70px #0009}
+.vehicle-list:after{content:"CLIMATE CONTROLLED · 21°C\A COLLECTION SECURITY ACTIVE";white-space:pre;display:block;margin-top:auto;padding:21px 20px;border-top:1px solid #2e3943;color:#576572;font:700 8px/1.9 "Noto Sans TC";letter-spacing:1.7px;background:linear-gradient(90deg,#101921,#0a1015)}
+.vehicle-list header{height:72px;display:grid;grid-template-columns:1fr auto;align-content:center;padding:0 18px;border-bottom:1px solid #35414b;background:linear-gradient(100deg,#1b252d,#0d1318)}
+.vehicle-list header span{grid-column:1/-1;color:#c99c59;font:700 8px "Noto Sans TC";letter-spacing:2.6px}
+.vehicle-list header b{font:800 20px "Barlow Condensed";letter-spacing:.4px}
+.vehicle-list header small{align-self:center;color:#667584;font:700 8px "Barlow Condensed";letter-spacing:1.3px}
+.vehicle-list button{position:relative;min-height:76px;padding:8px 10px 8px 8px;gap:9px;border:0;border-bottom:1px solid #242e37;border-radius:0;background:linear-gradient(90deg,#10171d,#0a0f14);transition:background .18s,border .18s,transform .18s}
+.vehicle-list button:hover{z-index:2;border-color:#61717f;background:linear-gradient(90deg,#1c2730,#10171d);transform:translateX(2px)}
+.vehicle-list button.active{z-index:3;border-color:#c99c59;box-shadow:inset 4px 0 #d4a35a,inset 0 0 0 1px #d4a35a8f,0 12px 28px #0009;background:linear-gradient(100deg,#28343d,#131b22)}
+.vehicle-list button.active:after{content:"";position:absolute;right:0;top:0;border-top:12px solid #d4a35a;border-left:12px solid transparent}
+.vehicle-list .garage-slot{width:22px;color:#53616e;font:800 11px "Barlow Condensed";text-align:center}
+.vehicle-list button.active .garage-slot{color:#e9c994}
+.vehicle-list .team-logo{width:46px;height:46px;border-radius:7px;border-color:#ffffff3b;box-shadow:0 5px 18px #000b}
+.vehicle-list button>div{display:flex;flex-direction:column;justify-content:center}
+.vehicle-list b{font-size:14px;line-height:1.08}
+.vehicle-list small{margin-top:4px;color:#83909c;font-size:7.5px}
+.vehicle-list em{margin-top:3px;color:#566571;font-size:7px;font-style:normal}
+.vehicle-list button>i{align-self:flex-start;margin-top:3px;padding:3px 5px;border:1px solid #2d6c5a;border-radius:2px;color:#65dab8;background:#15362c80;font:800 7px "Barlow Condensed";letter-spacing:.8px}
+.vehicle-list button.active>i{border-color:#ad8140;color:#efc47e;background:#4a341b80}
+.garage-main{min-width:0;border-color:#46525c;background:#0a0f13;box-shadow:0 30px 90px #000b}
+.showroom-toolbar{height:58px;display:flex;align-items:center;padding:0 18px 0 21px;border-bottom:1px solid #44515b;background:linear-gradient(90deg,#172129,#0b1116 62%,#121a20)}
+.showroom-toolbar>div:first-child{display:grid;grid-template-columns:auto auto;column-gap:10px;align-items:center}
+.showroom-toolbar .live-dot{grid-row:1/3;width:7px;height:7px;border-radius:50%;background:#50e1bc;box-shadow:0 0 12px #50e1bc}
+.showroom-toolbar span{font:800 11px "Barlow Condensed";letter-spacing:1.5px}
+.showroom-toolbar small{color:#667582;font-size:7px;letter-spacing:1.2px}
+.showroom-meter{margin-left:auto;display:flex;gap:13px;align-items:center}
+.showroom-meter span{color:#73818c;font-size:8px}
+.showroom-meter b{font:900 24px "Barlow Condensed";color:#e3c18b}
+.showroom-meter em{font-size:10px;color:#5f6d79;font-style:normal;margin-left:2px}
+.garage-stage{display:block;height:625px;position:relative;isolation:isolate;overflow:hidden;background:#151b20}
+.garage-stage:before,.garage-stage:after{content:none}
+.garage-stage .car-showcase{position:absolute;z-index:0;inset:0;width:100%;height:100%;min-height:0}
+.garage-stage .car-showcase canvas{filter:saturate(1.04) contrast(1.03)}
+.stage-cinema{position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(90deg,#03070b52 0,transparent 22%,transparent 66%,#070b0ec7 100%),linear-gradient(180deg,#00000012 58%,#0205088c 100%);box-shadow:inset 0 0 90px #000a}
+.stage-location{position:absolute;z-index:3;left:25px;top:24px;display:flex;align-items:center;gap:10px;padding:9px 12px 9px 9px;border:1px solid #ffffff25;background:#0b1016c7;backdrop-filter:blur(8px);box-shadow:0 10px 26px #0008}
+.stage-location>b{width:34px;height:34px;display:grid;place-items:center;background:linear-gradient(135deg,#bd263a,#68121f);font:italic 900 14px "Barlow Condensed"}
+.stage-location>span{font:800 9px/1.2 "Barlow Condensed";letter-spacing:1.4px}
+.stage-location small{color:#8a98a4;font-size:6px;letter-spacing:1.2px}
+.garage-stage .stage-copy{position:absolute;z-index:4;top:46px;right:27px;width:315px;min-height:310px;padding:24px;border:1px solid #ffffff25;background:linear-gradient(145deg,#101820e8,#070c11e6);box-shadow:0 24px 65px #000b;backdrop-filter:blur(12px)}
+.garage-stage .stage-copy:before{content:"";position:absolute;left:-1px;top:-1px;width:82px;height:2px;background:#d3a357;box-shadow:0 0 15px #d3a357}
+.stage-copy h2{font-size:38px;line-height:.9;margin:14px 0 21px;max-width:260px}
+.stage-copy>small{color:#d3aa6e!important}
+.team-meta{border-color:#ffffff29;background:#04080c82}
+.team-meta>img{width:48px;height:48px;border-radius:8px}
+.team-meta b{font-size:12px}
+.stage-copy>p{min-height:54px;margin:17px 0 14px;color:#b5bdc5;font-size:10px;line-height:1.75}
+.stage-tags{display:flex;flex-wrap:wrap;gap:5px}
+.stage-tags span{padding:5px 7px;border:1px solid #394853;color:#80909d;background:#111a21;font:700 6.5px "Noto Sans TC";letter-spacing:.8px}
+.rotation-status{position:absolute;z-index:3;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:center;gap:9px;padding:8px 13px;border:1px solid #ffffff24;background:#05090dc9;backdrop-filter:blur(9px);color:#8897a3}
+.rotation-status i{width:7px;height:7px;border:1px solid #55e7c2;border-radius:50%;box-shadow:0 0 9px #55e7c2}
+.rotation-status span{font:700 7px "Noto Sans TC";letter-spacing:1.3px}
+.rotation-status b{color:#e9edf1;font:800 11px "Barlow Condensed"}
+.showroom-arrow{position:absolute;z-index:6;top:50%;width:42px;height:70px;transform:translateY(-50%);border:1px solid #ffffff28;background:#0710189e;color:#e7eef5;font:300 36px/1 "Barlow Condensed";backdrop-filter:blur(8px);cursor:pointer;transition:background .18s,border .18s}
+.showroom-arrow:hover{border-color:#d5aa69;background:#3b2b1dba}
+.showroom-arrow.previous{left:12px}
+.showroom-arrow.next{right:354px}
+.garage-data{grid-template-columns:minmax(0,1.45fr) minmax(300px,.7fr);gap:0;padding:0;border-top:1px solid #46525c;background:#0a0f13}
+.performance-panel,.spec-box{padding:24px 27px}
+.performance-panel{border-right:1px solid #303b44;background:linear-gradient(115deg,#101820,#090e13)}
+.data-title{display:flex;align-items:center;gap:12px;margin-bottom:17px}
+.data-title>span{width:34px;height:34px;display:grid;place-items:center;border:1px solid #34434f;color:#cba060;font:900 16px "Barlow Condensed"}
+.data-title>div{flex:1}
+.data-title small{display:block;color:#657582;font-size:6.5px;letter-spacing:1.7px}
+.data-title h3{margin:1px 0 0;font-size:19px}
+.data-title>em{color:#596975;font:700 7px "Noto Sans TC";font-style:normal;letter-spacing:1.5px}
+.data-title.compact{margin-bottom:14px}
+.garage-data .stat-row{grid-template-columns:72px 1fr 68px;margin:9px 0}
+.garage-data .stat-row>div{height:4px;background:#202b33}
+.garage-data .stat-row i{background:linear-gradient(90deg,#b47b39,#f0c57d 45%,#43d8b2)}
+.spec-box{gap:0;background:linear-gradient(145deg,#0d151b,#080c10)}
+.spec-box dl{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:0 0 13px;background:#2c3841}
+.spec-box dl>div{min-width:0;padding:10px;background:#0c1318}
+.spec-box dt{color:#687783;font-size:7px}
+.spec-box dd{margin:5px 0 0;color:#edf1f4;font:800 15px "Barlow Condensed";white-space:nowrap}
+.spec-box dd small{font-size:7px;color:#71808b}
+.spec-box .free-state{color:#55dbb5;font-size:10px}
+.upgrade-meter{height:3px;margin:3px 0 15px;background:#222d35}
+.upgrade-meter i{display:block;height:100%;min-width:3px;background:linear-gradient(90deg,#c28e4d,#5fe0be)}
+.spec-box>button{margin-top:auto;width:100%;min-height:42px}
+.spec-box .selected-button{border-color:#3b4a55;color:#83919c}
+.limited-free{border-color:#bd8a446b;background:#bd8a4419;color:#e9bd7d}
+.garage-page .page-heading{margin-bottom:22px}
+@media(max-width:1420px){.garage-page{padding-left:25px;padding-right:25px}.garage-layout{grid-template-columns:275px minmax(0,1fr)}.vehicle-list button{min-height:70px}.vehicle-list .garage-slot{display:none}.vehicle-list .team-logo{width:42px;height:42px}.garage-stage{height:570px}.garage-stage .stage-copy{right:20px;width:288px;padding:20px}.stage-copy h2{font-size:32px}.showroom-arrow.next{right:327px}.garage-data{grid-template-columns:1.2fr .8fr}.performance-panel,.spec-box{padding:21px}.spec-box dl{grid-template-columns:1fr}.spec-box dl>div{display:flex;align-items:center;justify-content:space-between;padding:6px 9px}.spec-box dd{margin:0}}

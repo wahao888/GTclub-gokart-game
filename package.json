@@ -1,0 +1,22 @@
+{
+  "name": "f1-kart-racing",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n SERVER,WEB -c magenta,cyan \"npm run dev -w @f1-kart/server\" \"npm run dev -w @f1-kart/web\"",
+    "build": "npm run typecheck && npm run build -w @f1-kart/web && npm run build -w @f1-kart/server",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run test:e2e -w @f1-kart/web"
+  },
+  "devDependencies": {
+    "concurrently": "latest"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
