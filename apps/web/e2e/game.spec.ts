@@ -59,6 +59,61 @@ test("creates a live WebSocket room", async ({ page }) => {
   await expect(page.getByText("Playwright Racer ♛")).toBeVisible();
 });
 
+test("two drivers reconnect, synchronize their start, and see each other", async ({ browser }) => {
+  test.setTimeout(40_000);
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  try {
+    await Promise.all([host.goto("/"), guest.goto("/")]);
+    await Promise.all([
+      host.getByRole("button", { name: "多人", exact: true }).click(),
+      guest.getByRole("button", { name: "多人", exact: true }).click(),
+    ]);
+    await host.getByLabel("玩家名稱").fill("Host Driver");
+    await host.getByRole("button", { name: "建立私人房間" }).click();
+    const roomCode = await host.locator(".room-code b").textContent();
+    expect(roomCode).toMatch(/[A-Z2-9]{6}/);
+
+    await guest.getByLabel("玩家名稱").fill("Guest Driver");
+    await guest.locator('.join-row input[placeholder="ROOM CODE"]').fill(roomCode!);
+    await guest.getByRole("button", { name: "加入", exact: true }).click();
+    await expect(host.getByText("Guest Driver")).toBeVisible();
+
+    await guestContext.setOffline(true);
+    await expect(guest.getByText("RECONNECTING")).toBeVisible({ timeout: 5_000 });
+    await guestContext.setOffline(false);
+    await expect(guest.getByText("WEBSOCKET ONLINE")).toBeVisible({ timeout: 10_000 });
+
+    await guest.reload();
+    await expect(guest.getByRole("heading", { name: "多人賽事大廳" })).toBeVisible({ timeout: 10_000 });
+    await expect(guest.getByText("WEBSOCKET ONLINE")).toBeVisible();
+    await expect(guest.locator(".room-code b")).toHaveText(roomCode!);
+
+    await Promise.all([
+      host.getByRole("button", { name: "準備出賽" }).click(),
+      guest.getByRole("button", { name: "準備出賽" }).click(),
+    ]);
+    await Promise.all([
+      expect(host.locator(".game-canvas canvas")).toBeVisible({ timeout: 8_000 }),
+      expect(guest.locator(".game-canvas canvas")).toBeVisible({ timeout: 8_000 }),
+    ]);
+    await Promise.all([
+      expect(host.locator(".race-hud")).toHaveAttribute("data-race-phase", "racing", { timeout: 10_000 }),
+      expect(guest.locator(".race-hud")).toHaveAttribute("data-race-phase", "racing", { timeout: 10_000 }),
+    ]);
+    await host.keyboard.down("w");
+    await guest.keyboard.down("w");
+    await Promise.all([
+      expect(host.locator('.race-mini-map [data-marker-kind="remote"]')).toHaveCount(1, { timeout: 5_000 }),
+      expect(guest.locator('.race-mini-map [data-marker-kind="remote"]')).toHaveCount(1, { timeout: 5_000 }),
+    ]);
+  } finally {
+    await Promise.all([hostContext.close(), guestContext.close()]);
+  }
+});
+
 test("countersteering triggers mini turbo and energy triggers nitro", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "開始比賽 →" }).click();

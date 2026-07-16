@@ -1,0 +1,32 @@
+module.exports = {
+  apps: [
+    {
+      name: "formula-kart-server",
+      script: "/var/www/formula-kart/current/server/index.cjs",
+      cwd: "/var/www/formula-kart/current/server",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      time: true,
+      max_memory_restart: "128M",
+      out_file: "/var/log/formula-kart/server-out.log",
+      error_file: "/var/log/formula-kart/server-error.log",
+      merge_logs: true,
+      env: {
+        NODE_ENV: "production",
+        HOST: "127.0.0.1",
+        PORT: "8080",
+        ALLOWED_ORIGINS: "https://kart.gtclub.tw",
+        MAX_PLAYERS_PER_ROOM: "10",
+        MAX_CONNECTIONS: "50",
+        MAX_ROOMS: "20",
+        MAX_MESSAGES_PER_SECOND: "30",
+        MAX_TRANSFORMS_PER_SECOND: "20",
+        RECONNECT_GRACE_MS: "30000",
+        ROOM_IDLE_TTL_MS: "1800000",
+        RACE_TIMEOUT_MS: "900000",
+      },
+    },
+  ],
+};

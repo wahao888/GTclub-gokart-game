@@ -6,6 +6,7 @@ import {
   effectiveStats,
   seededRandom,
   type PartLevel,
+  type ClientRaceSnapshot,
   type PlayerStateV1,
   type Quality,
   type RaceConfig,
@@ -64,7 +65,7 @@ interface EngineCallbacks {
   onCountdown: (value: string | null) => void;
   onPause: (paused: boolean) => void;
   onFinish: (result: RaceResult) => void;
-  onNetworkSnapshot?: (snapshot: Omit<RaceSnapshot, "playerId" | "serverTime">) => void;
+  onNetworkSnapshot?: (snapshot: ClientRaceSnapshot) => void;
 }
 
 interface AiCar {
@@ -167,7 +168,7 @@ export class GameEngine {
   private rain?: THREE.Points;
   private playerCar: THREE.Group;
   private aiCars: AiCar[] = [];
-  private remoteCars = new Map<string, { mesh: THREE.Group; snapshot: RaceSnapshot }>();
+  private remoteCars = new Map<string, { mesh: THREE.Group; snapshots: RaceSnapshot[] }>();
   private keys = new Set<string>();
   private rng: () => number;
   private audio: EngineAudio;
@@ -175,6 +176,7 @@ export class GameEngine {
   private readonly fixedStep = 1 / 60;
   private disposed = false;
   private paused = false;
+  private networkSuspended = false;
   private phase: RacePhase = "countdown";
   private countdownElapsed = 0;
   private lastCountdown = "";
@@ -319,7 +321,10 @@ export class GameEngine {
     const key = event.key.toLowerCase();
     if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
     this.audio.enable();
-    if ((key === "escape" || key === "p") && !event.repeat && this.phase !== "finished") { this.setPaused(!this.paused); return; }
+    if ((key === "escape" || key === "p") && !event.repeat && this.phase !== "finished") {
+      if (this.config.mode !== "multiplayer") this.setPaused(!this.paused);
+      return;
+    }
     if (key === "e" && !event.repeat && this.phase === "racing" && !this.paused && this.boost >= 40) {
       this.boost -= 40;
       this.boostTimer = 2.55;
@@ -345,6 +350,12 @@ export class GameEngine {
     if (!paused) this.lastFrameTime = performance.now();
   }
 
+  setNetworkSuspended(suspended: boolean): void {
+    this.networkSuspended = suspended;
+    this.keys.clear();
+    if (!suspended) this.lastFrameTime = performance.now();
+  }
+
   private resize(): void {
     const width = Math.max(1, this.container.clientWidth); const height = Math.max(1, this.container.clientHeight);
     this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); this.renderer.setSize(width, height, false);
@@ -355,13 +366,13 @@ export class GameEngine {
     const now = performance.now();
     const delta = Math.min(0.05, Math.max(0, (now - this.lastFrameTime) / 1000));
     this.lastFrameTime = now;
-    if (!this.paused) {
+    if (!this.paused && !this.networkSuspended) {
       this.fixedAccumulator += delta;
       while (this.fixedAccumulator >= this.fixedStep) { this.fixedUpdate(this.fixedStep); this.fixedAccumulator -= this.fixedStep; }
       this.animateRain(delta);
     }
     const interpolation = THREE.MathUtils.clamp(this.fixedAccumulator / this.fixedStep, 0, 1);
-    this.updateTransforms(this.paused ? 0 : delta, interpolation);
+    this.updateTransforms(this.paused || this.networkSuspended ? 0 : delta, interpolation);
     this.updateCamera(delta);
     this.renderer.render(this.scene, this.camera);
   };
@@ -395,6 +406,22 @@ export class GameEngine {
   }
 
   private updateCountdown(dt: number): void {
+    if (this.config.startsAt !== undefined) {
+      const serverNow = Date.now() + (this.config.serverTimeOffsetMs ?? 0);
+      const remaining = this.config.startsAt - serverNow;
+      if (remaining > 0) {
+        const value = String(Math.max(1, Math.ceil(remaining / 1000)));
+        if (value !== this.lastCountdown) { this.lastCountdown = value; this.callbacks.onCountdown(value); }
+        return;
+      }
+      this.phase = "racing";
+      this.raceStartedAt = performance.now() + remaining;
+      this.lapStartedAt = this.raceStartedAt;
+      this.lastCountdown = "GO";
+      this.callbacks.onCountdown("GO");
+      window.setTimeout(() => { if (!this.disposed) this.callbacks.onCountdown(null); }, 750);
+      return;
+    }
     this.countdownElapsed += dt;
     const value = this.countdownElapsed < 1 ? "3" : this.countdownElapsed < 2 ? "2" : this.countdownElapsed < 3 ? "1" : this.countdownElapsed < 3.75 ? "GO" : "";
     if (value !== this.lastCountdown) { this.lastCountdown = value; this.callbacks.onCountdown(value || null); }
@@ -761,9 +788,29 @@ export class GameEngine {
       dt,
       this.lerpAngle(ai.previousHeading, ai.heading, interpolation)
     ));
-    this.remoteCars.forEach(({ mesh, snapshot }) => {
-      mesh.position.lerp(new THREE.Vector3(...snapshot.position), Math.min(1, dt * 11));
-      mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, snapshot.rotation, Math.min(1, dt * 11));
+    const renderTime = Date.now() + (this.config.serverTimeOffsetMs ?? 0) - 150;
+    this.remoteCars.forEach(({ mesh, snapshots }) => {
+      if (snapshots.length === 0) return;
+      let before = snapshots[0]!;
+      let after: RaceSnapshot | undefined;
+      for (const snapshot of snapshots) {
+        if (snapshot.serverTime <= renderTime) before = snapshot;
+        else { after = snapshot; break; }
+      }
+      const target = new THREE.Vector3(...before.position);
+      let targetRotation = before.rotation;
+      if (after && after.serverTime > before.serverTime) {
+        const alpha = THREE.MathUtils.clamp((renderTime - before.serverTime) / (after.serverTime - before.serverTime), 0, 1);
+        target.lerp(new THREE.Vector3(...after.position), alpha);
+        targetRotation = this.lerpAngle(before.rotation, after.rotation, alpha);
+      } else {
+        const extrapolationMs = Math.min(250, Math.max(0, renderTime - before.serverTime));
+        const distance = before.speed / 3.6 * extrapolationMs / 1000;
+        target.x += Math.sin(before.rotation) * distance;
+        target.z += Math.cos(before.rotation) * distance;
+      }
+      mesh.position.lerp(target, Math.min(1, dt * 14));
+      mesh.rotation.y = this.lerpAngle(mesh.rotation.y, targetRotation, Math.min(1, dt * 14));
     });
   }
 
@@ -798,7 +845,10 @@ export class GameEngine {
   private updateRace(_dt: number): void {
     const trackLength = TRACK_BY_ID[this.config.trackId].lengthKm * 1000;
     const completed = Math.max(0, Math.floor(this.playerDistance / trackLength));
-    const remoteProgress = [...this.remoteCars.values()].map(({ snapshot }) => ({ player: false, distance: Math.max(0, snapshot.lap - 1) * trackLength + snapshot.checkpoint / TRACK_BY_ID[this.config.trackId].checkpointCount * trackLength }));
+    const remoteProgress = [...this.remoteCars.values()].flatMap(({ snapshots }) => {
+      const snapshot = snapshots.at(-1);
+      return snapshot ? [{ player: false, distance: Math.max(0, snapshot.lap - 1) * trackLength + snapshot.checkpoint / TRACK_BY_ID[this.config.trackId].checkpointCount * trackLength }] : [];
+    });
     const sorted = [{ player: true, distance: this.playerDistance }, ...this.aiCars.map((ai) => ({ player: false, distance: ai.distance })), ...remoteProgress].sort((a, b) => b.distance - a.distance);
     this.currentPosition = sorted.findIndex((entry) => entry.player) + 1;
     if (this.playerDistance >= 0 && this.playerDistance < trackLength / TRACK_BY_ID[this.config.trackId].checkpointCount) this.stats.firstCheckpointPosition = this.currentPosition;
@@ -882,9 +932,11 @@ export class GameEngine {
     const aiFieldSpreadMeters = aiDistances.length > 1 ? Math.max(...aiDistances) - Math.min(...aiDistances) : 0;
     const trackLength = TRACK_BY_ID[this.config.trackId].lengthKm * 1000;
     const opponents: Array<{ id: string; kind: "ai" | "remote"; distance: number; progress: number }> = this.config.mode === "multiplayer"
-      ? [...this.remoteCars.entries()].map(([id, { snapshot }]) => {
+      ? [...this.remoteCars.entries()].flatMap(([id, { snapshots }]) => {
+        const snapshot = snapshots.at(-1);
+        if (!snapshot) return [];
         const progress = this.remoteTrackProgress(snapshot);
-        return { id: `remote-${id}`, kind: "remote", progress, distance: Math.max(0, snapshot.lap - 1) * trackLength + progress * trackLength };
+        return [{ id: `remote-${id}`, kind: "remote" as const, progress, distance: Math.max(0, snapshot.lap - 1) * trackLength + progress * trackLength }];
       })
       : this.aiCars.map((ai, index) => ({ id: `ai-${ai.vehicleId}-${index}`, kind: "ai", distance: ai.distance, progress: this.normalizedTrackPosition(ai.distance) }));
     const racersForMap: Array<{ id: string; kind: RaceMapRacer["kind"]; distance: number; progress: number }> = [
@@ -915,7 +967,7 @@ export class GameEngine {
       const checkpoint = Math.floor(this.normalizedTrackPosition(this.playerDistance) * TRACK_BY_ID[this.config.trackId].checkpointCount);
       this.callbacks.onNetworkSnapshot({
         vehicleId: this.vehicleId, livery: this.livery, position: [this.playerCar.position.x, this.playerCar.position.y, this.playerCar.position.z],
-        rotation: this.playerCar.rotation.y, speed: speedKph, lap: this.currentLap(), checkpoint, rank: this.currentPosition, finished: this.phase === "coasting" || this.phase === "finished"
+        rotation: this.playerCar.rotation.y, speed: speedKph, lap: this.currentLap(), checkpoint, finished: this.phase === "coasting" || this.phase === "finished"
       });
     }
   }
@@ -924,10 +976,15 @@ export class GameEngine {
     const active = new Set(snapshots.map((snapshot) => snapshot.playerId));
     snapshots.forEach((snapshot) => {
       const existing = this.remoteCars.get(snapshot.playerId);
-      if (existing) { existing.snapshot = snapshot; return; }
+      if (existing) {
+        const latest = existing.snapshots.at(-1);
+        if (!latest || snapshot.serverTime > latest.serverTime) existing.snapshots.push(snapshot);
+        existing.snapshots = existing.snapshots.filter((entry) => entry.serverTime >= snapshot.serverTime - 1_000).slice(-6);
+        return;
+      }
       const mesh = createKart(snapshot.vehicleId, snapshot.livery, false);
       mesh.position.set(...snapshot.position); mesh.rotation.y = snapshot.rotation; this.scene.add(mesh);
-      this.remoteCars.set(snapshot.playerId, { mesh, snapshot });
+      this.remoteCars.set(snapshot.playerId, { mesh, snapshots: [snapshot] });
     });
     this.remoteCars.forEach(({ mesh }, id) => { if (!active.has(id)) { this.scene.remove(mesh); this.remoteCars.delete(id); } });
   }

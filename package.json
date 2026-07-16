@@ -11,7 +11,9 @@
     "build": "npm run typecheck && npm run build -w @f1-kart/web && npm run build -w @f1-kart/server",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "test:e2e": "npm run test:e2e -w @f1-kart/web"
+    "test:e2e": "npm run test:e2e -w @f1-kart/web",
+    "test:load": "node scripts/load-test.mjs",
+    "deploy": "bash deploy/deploy.sh"
   },
   "devDependencies": {
     "concurrently": "latest"

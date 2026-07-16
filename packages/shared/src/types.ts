@@ -96,6 +96,8 @@ export interface RaceConfig {
   mode: RaceMode;
   roomCode?: string;
   gridPosition?: number;
+  startsAt?: number;
+  serverTimeOffsetMs?: number;
 }
 
 export interface LapResult {
@@ -168,14 +170,25 @@ export interface RaceSnapshot {
   finished: boolean;
 }
 
+export type ClientRaceSnapshot = Omit<RaceSnapshot, "playerId" | "serverTime" | "rank">;
+
+export interface RaceClassification {
+  playerId: string;
+  rank?: number;
+  totalTimeMs?: number;
+  status: "finished" | "dnf";
+}
+
 export type ClientMessage =
-  | { v: 1; type: "create_room"; name: string; vehicleId: VehicleId; trackId: TrackId }
-  | { v: 1; type: "join_room"; name: string; vehicleId: VehicleId; roomCode: string }
-  | { v: 1; type: "set_ready"; ready: boolean }
-  | { v: 1; type: "transform"; snapshot: Omit<RaceSnapshot, "playerId" | "serverTime"> }
-  | { v: 1; type: "checkpoint"; checkpoint: number; lap: number }
-  | { v: 1; type: "finish"; totalTimeMs: number }
-  | { v: 1; type: "leave_room" };
+  | { v: 2; type: "create_room"; name: string; vehicleId: VehicleId; trackId: TrackId }
+  | { v: 2; type: "join_room"; name: string; vehicleId: VehicleId; roomCode: string }
+  | { v: 2; type: "resume_room"; playerId: string; resumeToken: string; roomCode: string }
+  | { v: 2; type: "set_ready"; ready: boolean }
+  | { v: 2; type: "transform"; snapshot: ClientRaceSnapshot }
+  | { v: 2; type: "checkpoint"; checkpoint: number; lap: number }
+  | { v: 2; type: "finish" }
+  | { v: 2; type: "rematch" }
+  | { v: 2; type: "leave_room" };
 
 export interface RoomPlayer {
   id: string;
@@ -183,15 +196,20 @@ export interface RoomPlayer {
   vehicleId: VehicleId;
   ready: boolean;
   finished: boolean;
+  connected: boolean;
+  dnf?: boolean;
   rank?: number;
 }
 
 export type ServerMessage =
-  | { v: 1; type: "connected"; playerId: string }
-  | { v: 1; type: "room_state"; roomCode: string; hostId: string; trackId: TrackId; players: RoomPlayer[] }
-  | { v: 1; type: "countdown"; startsAt: number; seed: number; weather: Weather }
-  | { v: 1; type: "race_start"; serverTime: number }
-  | { v: 1; type: "snapshot"; snapshots: RaceSnapshot[] }
-  | { v: 1; type: "finish_order"; playerIds: string[] }
-  | { v: 1; type: "player_left"; playerId: string }
-  | { v: 1; type: "error"; code: string; message: string };
+  | { v: 2; type: "connected"; serverTime: number }
+  | { v: 2; type: "session"; playerId: string; resumeToken: string; roomCode: string }
+  | { v: 2; type: "room_state"; roomCode: string; hostId: string; trackId: TrackId; players: RoomPlayer[] }
+  | { v: 2; type: "countdown"; startsAt: number; seed: number; weather: Weather }
+  | { v: 2; type: "race_start"; serverTime: number }
+  | { v: 2; type: "snapshot"; snapshots: RaceSnapshot[] }
+  | { v: 2; type: "race_result"; playerId: string; rank: number; totalRacers: number; totalTimeMs: number; finishOrder: string[] }
+  | { v: 2; type: "race_complete"; classification: RaceClassification[] }
+  | { v: 2; type: "room_reset"; roomCode: string }
+  | { v: 2; type: "player_left"; playerId: string }
+  | { v: 2; type: "error"; code: string; message: string; retryable?: boolean };
