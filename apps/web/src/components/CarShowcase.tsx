@@ -231,8 +231,8 @@ function addGarageEnvironment(scene: THREE.Scene, vehicleId: VehicleId, car: THR
   const otherCars = VEHICLES.filter((entry) => entry.id !== vehicleId).slice(0, 3);
   const parked = [
     { x: -4.8, z: -3.2, rotation: -0.02 },
-    { x: -2.35, z: -4.35, rotation: -0.07 },
-    { x: 0.25, z: -5.0, rotation: -0.12 },
+    { x: -6.2, z: -2.0, rotation: 0.18 },
+    { x: -7.0, z: 0.75, rotation: 0.28 },
   ];
   otherCars.forEach((entry, index) => {
     const bay = parked[index]!;
