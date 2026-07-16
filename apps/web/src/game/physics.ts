@@ -47,6 +47,12 @@ const smoothstep = (value: number): number => {
   return t * t * (3 - 2 * t);
 };
 
+export function getHandlingWorldScale(worldScale: number): number {
+  // Large circuit meshes may be expanded so a wide kart road does not pinch
+  // at hairpins. That visual expansion must not amplify steering or lane drift.
+  return clamp(worldScale, 0.25, 0.95);
+}
+
 export function getSpeedSensation(speedKph: number, nitro = false, miniBoost = false): SpeedSensation {
   // Perception ramps non-linearly: town speeds stay calm while 250+ km/h opens
   // the lens and pulls the chase camera back. Nitro widens the lens and adds

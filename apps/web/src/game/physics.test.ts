@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { finishCoastSpeed, getSpeedSensation, resolveKartCollision, resolveWallContact, wallEscapeHeading } from "./physics";
+import { finishCoastSpeed, getHandlingWorldScale, getSpeedSensation, resolveKartCollision, resolveWallContact, wallEscapeHeading } from "./physics";
 
 describe("vehicle physics helpers", () => {
+  it("does not let an enlarged circuit mesh amplify steering sensitivity", () => {
+    expect(getHandlingWorldScale(0.376)).toBeCloseTo(0.376);
+    expect(getHandlingWorldScale(0.945)).toBeCloseTo(0.945);
+    expect(getHandlingWorldScale(2.084)).toBe(0.95);
+  });
+
   it("makes high speed visually distinct from low speed", () => {
     const low = getSpeedSensation(45);
     const fast = getSpeedSensation(280);

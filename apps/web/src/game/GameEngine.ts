@@ -16,7 +16,7 @@ import {
 import { createKart } from "./carFactory";
 import { createAiDriverProfiles, type AiDriverProfile } from "./aiDriver";
 import { DriftEffects } from "./DriftEffects";
-import { finishCoastSpeed, getSpeedSensation, resolveKartCollision, resolveWallContact, wallEscapeHeading } from "./physics";
+import { finishCoastSpeed, getHandlingWorldScale, getSpeedSensation, resolveKartCollision, resolveWallContact, wallEscapeHeading } from "./physics";
 import { TRACK_CURB_OUTER_WIDTH, TRACK_ROAD_HALF_WIDTH, TRACK_WALL_HALF_WIDTH, createTrackScene } from "./trackData";
 import { WEATHER_VISUALS } from "./weatherVisuals";
 
@@ -436,6 +436,7 @@ export class GameEngine {
     const grip = stats.grip * (this.defensiveWake ? 0.94 : 1);
     const trackLength = TRACK_BY_ID[this.config.trackId].lengthKm * 1000;
     const worldScale = this.curve.getLength() / trackLength;
+    const handlingWorldScale = getHandlingWorldScale(worldScale);
     const trackTangent = this.curve.getTangentAt(this.normalizedTrackPosition(this.playerDistance)).normalize();
     const trackNormal = new THREE.Vector3(-trackTangent.z, 0, trackTangent.x).normalize();
     const trackHeading = Math.atan2(trackTangent.x, trackTangent.z);
@@ -449,7 +450,7 @@ export class GameEngine {
     this.steeringInput += THREE.MathUtils.clamp(steer - this.steeringInput, -steeringResponse * dt, steeringResponse * dt);
     const maximumSteeringAngle = THREE.MathUtils.lerp(0.5, 0.13, normalizedSpeed);
     const steeringAngle = this.steeringInput * maximumSteeringAngle;
-    const visualSpeed = Math.abs(this.playerSpeed) * worldScale;
+    const visualSpeed = Math.abs(this.playerSpeed) * handlingWorldScale;
     // A stationary kart normally cannot yaw, but one resting against a wall
     // needs a little tyre scrub so steering input can actually free its nose.
     const steeringVisualSpeed = nearContactWall ? Math.max(visualSpeed, 4.8) : visualSpeed;
@@ -506,7 +507,7 @@ export class GameEngine {
     const movementHeading = this.playerHeading + this.headingOffset;
     const movementDirection = new THREE.Vector3(Math.sin(movementHeading), 0, Math.cos(movementHeading));
     this.trackForwardSpeed = this.playerSpeed * movementDirection.dot(trackTangent);
-    const trackLateralSpeed = this.playerSpeed * movementDirection.dot(trackNormal) * worldScale;
+    const trackLateralSpeed = this.playerSpeed * movementDirection.dot(trackNormal) * handlingWorldScale;
     this.playerDistance += this.trackForwardSpeed * dt;
     this.lateral += (trackLateralSpeed + this.lateralVelocity) * dt;
 

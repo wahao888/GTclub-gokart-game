@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TRACK_BY_ID, TRACKS } from "@f1-kart/shared";
+import { getHandlingWorldScale } from "./physics";
 import { TRACK_CURB_OUTER_WIDTH, TRACK_ROAD_HALF_WIDTH, TRACK_WALL_HALF_WIDTH, createTrackCurve } from "./trackData";
 
 function minimumPlanarRadius(curve: ReturnType<typeof createTrackCurve>, sampleCount = 1_200): number {
@@ -61,6 +62,13 @@ describe("track geometry", () => {
     expect(width / height).toBeGreaterThan(0.95);
     expect(width / height).toBeLessThan(1.15);
     expect(minimumPlanarRadius(curve, 3_600)).toBeGreaterThan(TRACK_WALL_HALF_WIDTH);
+  });
+
+  it("gives Hungaroring the same effective steering scale as Fantasia", () => {
+    const fantasiaScale = createTrackCurve("fantasia").getLength() / (TRACK_BY_ID.fantasia.lengthKm * 1000);
+    const hungaroringScale = createTrackCurve("hungaroring").getLength() / (TRACK_BY_ID.hungaroring.lengthKm * 1000);
+    expect(hungaroringScale).toBeGreaterThan(2);
+    expect(getHandlingWorldScale(hungaroringScale) - getHandlingWorldScale(fantasiaScale)).toBeLessThan(0.01);
   });
 
   it("alternates between left and right turns around Fantasia", () => {
