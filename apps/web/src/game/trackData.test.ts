@@ -17,4 +17,29 @@ describe("track geometry", () => {
     expect(TRACK_CURB_OUTER_WIDTH).toBeGreaterThan(TRACK_ROAD_HALF_WIDTH);
     expect(TRACK_WALL_HALF_WIDTH).toBeGreaterThan(TRACK_CURB_OUTER_WIDTH);
   });
+
+  it("keeps Fantasia turns wider than the complete road and shoulder", () => {
+    const curve = createTrackCurve("fantasia");
+    const sampleCount = 1_200;
+    let minimumRadius = Infinity;
+
+    for (let index = 0; index < sampleCount; index += 1) {
+      const previous = curve.getPointAt(((index - 1 + sampleCount) % sampleCount) / sampleCount);
+      const current = curve.getPointAt(index / sampleCount);
+      const next = curve.getPointAt(((index + 1) % sampleCount) / sampleCount);
+      const previousDistance = Math.hypot(previous.x - current.x, previous.z - current.z);
+      const nextDistance = Math.hypot(next.x - current.x, next.z - current.z);
+      const chordDistance = Math.hypot(next.x - previous.x, next.z - previous.z);
+      const triangleArea = Math.abs(
+        (current.x - previous.x) * (next.z - previous.z) -
+        (current.z - previous.z) * (next.x - previous.x)
+      ) / 2;
+      const radius = triangleArea === 0
+        ? Infinity
+        : previousDistance * nextDistance * chordDistance / (4 * triangleArea);
+      minimumRadius = Math.min(minimumRadius, radius);
+    }
+
+    expect(minimumRadius).toBeGreaterThan(TRACK_WALL_HALF_WIDTH);
+  });
 });

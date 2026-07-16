@@ -13,7 +13,8 @@ export function createTrackCurve(trackId: TrackId): THREE.CatmullRomCurve3 {
         [-74, 0, -25], [-48, 0, -70], [8, 0, -82], [66, 0, -62], [88, 0, -12], [75, 0, 43], [25, 0, 70], [-25, 0, 65], [-70, 0, 35]
       ]
     : [
-        [-100, 0, -30], [-72, 3, -88], [-10, 8, -105], [42, 12, -78], [90, 9, -90], [115, 2, -42], [82, 0, -10], [118, 5, 35], [75, 10, 82], [20, 7, 68], [-20, 3, 108], [-75, 0, 82], [-118, 4, 35], [-75, 1, 5]
+        [-120, 0, -30], [-92, 2, -71], [-49, 5, -101], [7, 8, -107], [62, 10, -96], [100, 8, -62], [124, 4, -18],
+        [120, 2, 30], [91, 4, 70], [49, 8, 102], [-7, 7, 107], [-61, 4, 96], [-100, 1, 62], [-124, 0, 18]
       ];
   return new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)), true, "catmullrom", trackId === "velocity" ? 0.35 : 0.42);
 }
@@ -280,14 +281,6 @@ function addFantasiaDetails(group: THREE.Group, curve: THREE.CatmullRomCurve3): 
     dummy.rotation.set(index * 0.4, index * 1.1, index * 0.2); dummy.scale.set(1 + index % 3 * 0.35, 0.8 + index % 4 * 0.3, 1); dummy.updateMatrix(); rocks.setMatrixAt(index, dummy.matrix);
   }
   rocks.castShadow = true; group.add(rocks);
-
-  [0.19, 0.51, 0.77].forEach((t, index) => {
-    const frame = trackFrame(curve, t);
-    const arch = new THREE.Mesh(new THREE.TorusGeometry(TRACK_ROAD_HALF_WIDTH + 1.7, 0.34, 8, 52, Math.PI), new THREE.MeshBasicMaterial({ color: index === 1 ? 0x38e8c0 : 0xd458ff, toneMapped: false }));
-    arch.position.copy(frame.point); arch.position.y += 0.35; arch.rotation.y = frame.heading; group.add(arch);
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(TRACK_WALL_HALF_WIDTH * 2, 0.5, 0.55), new THREE.MeshStandardMaterial({ color: 0x14101c, emissive: index === 1 ? 0x075d52 : 0x501065, emissiveIntensity: 1.2 }));
-    beam.position.copy(frame.point); beam.position.y += 9.6; beam.rotation.y = frame.heading; group.add(beam);
-  });
 
   const windowMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
   const windows = new THREE.InstancedMesh(new THREE.BoxGeometry(0.14, 1.25, 2.35), windowMaterial, buildingCount * 3);
