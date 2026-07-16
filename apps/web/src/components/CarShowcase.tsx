@@ -198,22 +198,22 @@ function addGarageEnvironment(scene: THREE.Scene, vehicleId: VehicleId, car: THR
     new THREE.CylinderGeometry(3.65, 3.82, 0.3, 72),
     new THREE.MeshPhysicalMaterial({ color: 0x171d22, metalness: 0.82, roughness: 0.15, clearcoat: 1 }),
   );
-  platform.position.set(-0.8, 0.03, 0.15);
+  platform.position.set(car.position.x, 0.03, car.position.z);
   platform.receiveShadow = true;
   architecture.add(platform);
   const platformTop = new THREE.Mesh(
     new THREE.CylinderGeometry(3.48, 3.48, 0.06, 72),
     new THREE.MeshPhysicalMaterial({ color: 0x41464a, metalness: 0.48, roughness: 0.19, clearcoat: 1 }),
   );
-  platformTop.position.set(-0.8, 0.2, 0.15);
+  platformTop.position.set(car.position.x, 0.2, car.position.z);
   platformTop.receiveShadow = true;
   architecture.add(platformTop);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(3.69, 0.07, 10, 96), accentGlow);
   ring.rotation.x = Math.PI / 2;
-  ring.position.set(-0.8, 0.15, 0.15);
+  ring.position.set(car.position.x, 0.15, car.position.z);
   architecture.add(ring);
   const underGlow = new THREE.PointLight(accent, 12, 9, 2);
-  underGlow.position.set(-0.8, 0.3, 0.2);
+  underGlow.position.set(car.position.x, 0.3, car.position.z + 0.05);
   architecture.add(underGlow);
 
   const banner = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1.75), createSignMaterial("FORMULA KART", "HERITAGE MOTOR GALLERY"));
@@ -231,8 +231,8 @@ function addGarageEnvironment(scene: THREE.Scene, vehicleId: VehicleId, car: THR
   const otherCars = VEHICLES.filter((entry) => entry.id !== vehicleId).slice(0, 3);
   const parked = [
     { x: -4.8, z: -3.2, rotation: -0.02 },
-    { x: -6.2, z: -2.0, rotation: 0.18 },
-    { x: -7.0, z: 0.75, rotation: 0.28 },
+    { x: -2.35, z: -4.35, rotation: -0.07 },
+    { x: 0.25, z: -5.0, rotation: -0.12 },
   ];
   otherCars.forEach((entry, index) => {
     const bay = parked[index]!;
@@ -289,7 +289,10 @@ export function CarShowcase({
 
     const car = createKart(vehicleId, livery, true);
     car.rotation.y = isGarage ? -0.48 : -0.55;
-    if (isGarage) car.position.set(-0.8, 0.27, 0.15);
+    if (isGarage) {
+      car.position.set(-2.9, 0.27, 0.65);
+      car.scale.multiplyScalar(1.24);
+    }
     car.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.castShadow = true;
