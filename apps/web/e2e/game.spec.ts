@@ -1,7 +1,21 @@
 import { expect, test } from "@playwright/test";
 
+test("loads every team logo in the garage", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "車庫", exact: true }).click();
+
+  const logos = page.locator(".vehicle-list img.team-logo");
+  await expect(logos).toHaveCount(9);
+  await expect.poll(
+    () => logos.evaluateAll((images) => images.every((image) => {
+      const logo = image as HTMLImageElement;
+      return logo.complete && logo.naturalWidth > 0;
+    })),
+  ).toBe(true);
+});
+
 test("starts a WebGL race and opens the pause menu", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await expect(page).toHaveTitle(/Formula Kart/);
   await expect(page.getByRole("heading", { name: "FORMULA KART" })).toBeVisible();
   await expect(page.locator(".hero-car canvas")).toBeVisible();
@@ -50,7 +64,7 @@ test("starts a WebGL race and opens the pause menu", async ({ page }) => {
 });
 
 test("creates a live WebSocket room", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "多人", exact: true }).click();
   await page.getByLabel("玩家名稱").fill("Playwright Racer");
   await page.getByRole("button", { name: "建立私人房間" }).click();
@@ -66,7 +80,7 @@ test("two drivers reconnect, synchronize their start, and see each other", async
   const host = await hostContext.newPage();
   const guest = await guestContext.newPage();
   try {
-    await Promise.all([host.goto("/"), guest.goto("/")]);
+    await Promise.all([host.goto("./"), guest.goto("./")]);
     await Promise.all([
       host.getByRole("button", { name: "多人", exact: true }).click(),
       guest.getByRole("button", { name: "多人", exact: true }).click(),
@@ -115,7 +129,7 @@ test("two drivers reconnect, synchronize their start, and see each other", async
 });
 
 test("countersteering triggers mini turbo and energy triggers nitro", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "開始比賽 →" }).click();
   await page.getByRole("button", { name: "進入發車區 →" }).click();
   await expect(page.locator(".game-canvas canvas")).toBeVisible();
@@ -143,7 +157,7 @@ test("countersteering triggers mini turbo and energy triggers nitro", async ({ p
 
 test("recovers from a wall contact without getting trapped in repeated impacts", async ({ page }) => {
   test.setTimeout(45_000);
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "開始比賽 →" }).click();
   await page.getByRole("button", { name: /FANTASIA/ }).click();
   await page.getByRole("button", { name: "進入發車區 →" }).click();

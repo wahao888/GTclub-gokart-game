@@ -36,14 +36,14 @@ npm run build
 
 ## 正式部署
 
-- 網址：`https://kart.gtclub.tw`
-- Nginx 直接提供 `apps/web/dist`，並將 `/ws` 與 `/healthz` 轉送至 `127.0.0.1:8080`。
+- 網址：`https://gtclub.tw/formula-kart/`
+- Nginx 直接提供 `apps/web/dist`，並將 `/formula-kart/ws` 與 `/formula-kart/healthz` 轉送至 `127.0.0.1:8080`。
 - PM2 程序：`formula-kart-server`，記憶體上限 128 MB。
 - 發布採 `/var/www/formula-kart/releases/<版本>` 與 `current` symlink，不在 EC2 上執行 npm 安裝或建置。
 
 ```bash
 npm run deploy
-WS_URL=wss://kart.gtclub.tw/ws ORIGIN=https://kart.gtclub.tw DURATION_MS=900000 npm run test:load
+WS_URL=wss://gtclub.tw/formula-kart/ws ORIGIN=https://gtclub.tw DURATION_MS=900000 npm run test:load
 ```
 
 部署設定與 CloudWatch 告警腳本位於 `deploy/`。

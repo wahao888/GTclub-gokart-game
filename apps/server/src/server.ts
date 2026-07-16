@@ -117,7 +117,7 @@ function envInt(name: string, fallback: number): number {
 }
 
 function resolveOptions(options: KartServerOptions): ResolvedOptions {
-  const envOrigins = (process.env.ALLOWED_ORIGINS ?? (process.env.NODE_ENV === "production" ? "https://kart.gtclub.tw" : ""))
+  const envOrigins = (process.env.ALLOWED_ORIGINS ?? (process.env.NODE_ENV === "production" ? "https://gtclub.tw,https://www.gtclub.tw" : ""))
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);

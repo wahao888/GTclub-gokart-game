@@ -14,16 +14,16 @@ npm run build
 ssh -i "$DEPLOY_KEY" "$DEPLOY_HOST" "sudo mkdir -p '$REMOTE_RELEASE/web' '$REMOTE_RELEASE/server' '$REMOTE_ROOT/shared' /var/log/formula-kart
 sudo chown -R ubuntu:ubuntu '$REMOTE_ROOT' /var/log/formula-kart"
 
-rsync -a --delete -e "ssh -i $DEPLOY_KEY" apps/web/dist/ "$DEPLOY_HOST:$REMOTE_RELEASE/web/"
-rsync -a --delete -e "ssh -i $DEPLOY_KEY" apps/server/dist/ "$DEPLOY_HOST:$REMOTE_RELEASE/server/"
+rsync -a --delete --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r -e "ssh -i $DEPLOY_KEY" apps/web/dist/ "$DEPLOY_HOST:$REMOTE_RELEASE/web/"
+rsync -a --delete --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r -e "ssh -i $DEPLOY_KEY" apps/server/dist/ "$DEPLOY_HOST:$REMOTE_RELEASE/server/"
 rsync -a -e "ssh -i $DEPLOY_KEY" \
   deploy/ecosystem.config.cjs \
   deploy/cloudwatch-alarms.sh \
-  deploy/nginx-kart-http.conf \
-  deploy/nginx-kart-https.conf \
+  deploy/nginx-formula-kart-locations.conf \
   "$DEPLOY_HOST:$REMOTE_ROOT/shared/"
 
-ssh -i "$DEPLOY_KEY" "$DEPLOY_HOST" "ln -sfn '$REMOTE_RELEASE' '$REMOTE_ROOT/current'
+ssh -i "$DEPLOY_KEY" "$DEPLOY_HOST" "chmod -R a+rX '$REMOTE_RELEASE'
+ln -sfn '$REMOTE_RELEASE' '$REMOTE_ROOT/current'
 cd '$REMOTE_ROOT'
 pm2 startOrReload '$REMOTE_ROOT/shared/ecosystem.config.cjs' --update-env
 pm2 save

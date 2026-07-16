@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
@@ -7,13 +9,13 @@ export default defineConfig({
   workers: 1,
   reporter: "line",
   use: {
-    baseURL: "http://127.0.0.1:5190",
+    baseURL: externalBaseUrl ?? "http://127.0.0.1:5190",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     ...devices["Desktop Chrome"],
     channel: "chrome"
   },
-  webServer: {
+  webServer: externalBaseUrl ? undefined : {
     command: "VITE_PORT=5190 PORT=18081 VITE_WS_URL=ws://127.0.0.1:18081/ws npm run dev",
     cwd: "../..",
     url: "http://127.0.0.1:5190",

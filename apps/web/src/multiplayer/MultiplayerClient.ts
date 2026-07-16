@@ -40,7 +40,7 @@ const RECONNECT_DELAYS = [500, 1_000, 2_000, 4_000];
 function defaultUrl(): string {
   if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL;
   if (import.meta.env.DEV) return `ws://${location.hostname}:8080/ws`;
-  return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
+  return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${import.meta.env.BASE_URL}ws`;
 }
 
 export class MultiplayerClient {

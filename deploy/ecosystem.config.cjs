@@ -17,7 +17,7 @@ module.exports = {
         NODE_ENV: "production",
         HOST: "127.0.0.1",
         PORT: "8080",
-        ALLOWED_ORIGINS: "https://kart.gtclub.tw",
+        ALLOWED_ORIGINS: "https://gtclub.tw,https://www.gtclub.tw",
         MAX_PLAYERS_PER_ROOM: "10",
         MAX_CONNECTIONS: "50",
         MAX_ROOMS: "20",
