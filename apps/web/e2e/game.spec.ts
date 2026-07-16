@@ -22,6 +22,10 @@ test("starts a WebGL race and opens the pause menu", async ({ page }) => {
 
   await expect(page.locator(".game-canvas canvas")).toBeVisible();
   await expect(page.getByText("POSITION", { exact: true })).toBeVisible();
+  await expect(page.locator(".race-mini-map")).toBeVisible();
+  await expect(page.locator('.race-mini-map [data-marker-kind="player"]')).toHaveCount(1);
+  await expect(page.locator('.race-mini-map [data-marker-kind="ai"]')).toHaveCount(8);
+  await expect(page.locator(".race-mini-map__track")).toHaveAttribute("d", /M/);
   await page.keyboard.press("p");
   await expect(page.getByRole("heading", { name: "比賽暫停" })).toBeVisible();
   await page.getByRole("button", { name: "繼續比賽" }).click();

@@ -22,6 +22,13 @@ import { WEATHER_VISUALS } from "./weatherVisuals";
 
 type RacePhase = "countdown" | "racing" | "coasting" | "finished";
 
+export interface RaceMapRacer {
+  id: string;
+  kind: "player" | "ai" | "remote";
+  progress: number;
+  rank: number;
+}
+
 export interface GameTelemetry {
   speedKph: number;
   rpm: number;
@@ -49,6 +56,7 @@ export interface GameTelemetry {
   collisionPulse: number;
   aiSpeedSpreadKph: number;
   aiFieldSpreadMeters: number;
+  raceMapRacers: RaceMapRacer[];
 }
 
 interface EngineCallbacks {
@@ -211,8 +219,8 @@ export class GameEngine {
   private stats = {
     speedSum: 0, samples: 0, maxSpeed: 0, collisions: 0, offTrack: 0,
     longestDrift: 0, totalDrift: 0, boostUses: 0, brakeUsed: false, driftUsed: false,
-    wrongWay: 0, airborne: 0, firstCheckpointPosition: 8, ledEveryCheckpoint: true,
-    finalLapStartPosition: 8
+    wrongWay: 0, airborne: 0, firstCheckpointPosition: 1, ledEveryCheckpoint: true,
+    finalLapStartPosition: 0
   };
   private currentPosition = 8;
   private drs = false;
@@ -286,6 +294,8 @@ export class GameEngine {
         profile: driverProfiles[index]!, vehicleId: vehicle.id
       });
     });
+    this.currentPosition = this.totalRacers();
+    this.stats.firstCheckpointPosition = this.currentPosition;
     this.updateTransforms(0, 1);
 
     this.resizeObserver = new ResizeObserver(() => this.resize()); this.resizeObserver.observe(container); this.resize();
@@ -793,7 +803,7 @@ export class GameEngine {
     this.currentPosition = sorted.findIndex((entry) => entry.player) + 1;
     if (this.playerDistance >= 0 && this.playerDistance < trackLength / TRACK_BY_ID[this.config.trackId].checkpointCount) this.stats.firstCheckpointPosition = this.currentPosition;
     if (this.currentPosition !== 1) this.stats.ledEveryCheckpoint = false;
-    if (this.currentLap() === this.config.lapCount && this.stats.finalLapStartPosition === 8) this.stats.finalLapStartPosition = this.currentPosition;
+    if (this.currentLap() === this.config.lapCount && this.stats.finalLapStartPosition === 0) this.stats.finalLapStartPosition = this.currentPosition;
     if (completed > this.lastCompletedLap) {
       const now = performance.now(); const lapTime = now - this.lapStartedAt; const oldPb = this.playerState.bestLaps[this.config.trackId] ?? Infinity;
       this.lapTimes.push(lapTime); this.lastCompletedLap = completed; this.lapStartedAt = now;
@@ -842,7 +852,7 @@ export class GameEngine {
     this.pendingResult = {
       config: this.config,
       position: this.currentPosition,
-      totalRacers: this.config.mode === "multiplayer" ? Math.max(1, this.remoteCars.size + 1) : 8,
+      totalRacers: this.totalRacers(),
       totalTimeMs,
       laps: this.lapTimes.slice(0, this.config.lapCount).map((timeMs, index) => ({ lap: index + 1, timeMs, personalBest: timeMs <= (this.playerState.bestLaps[this.config.trackId] ?? Infinity) })),
       fastestLap,
@@ -870,9 +880,22 @@ export class GameEngine {
     const aiDistances = this.aiCars.map((ai) => ai.distance);
     const aiSpeedSpreadKph = aiSpeeds.length > 1 ? Math.max(...aiSpeeds) - Math.min(...aiSpeeds) : 0;
     const aiFieldSpreadMeters = aiDistances.length > 1 ? Math.max(...aiDistances) - Math.min(...aiDistances) : 0;
+    const trackLength = TRACK_BY_ID[this.config.trackId].lengthKm * 1000;
+    const opponents: Array<{ id: string; kind: "ai" | "remote"; distance: number; progress: number }> = this.config.mode === "multiplayer"
+      ? [...this.remoteCars.entries()].map(([id, { snapshot }]) => {
+        const progress = this.remoteTrackProgress(snapshot);
+        return { id: `remote-${id}`, kind: "remote", progress, distance: Math.max(0, snapshot.lap - 1) * trackLength + progress * trackLength };
+      })
+      : this.aiCars.map((ai, index) => ({ id: `ai-${ai.vehicleId}-${index}`, kind: "ai", distance: ai.distance, progress: this.normalizedTrackPosition(ai.distance) }));
+    const racersForMap: Array<{ id: string; kind: RaceMapRacer["kind"]; distance: number; progress: number }> = [
+      { id: "player", kind: "player", distance: this.playerDistance, progress: this.normalizedTrackPosition(this.playerDistance) },
+      ...opponents
+    ];
+    const rankById = new Map([...racersForMap].sort((a, b) => b.distance - a.distance).map((racer, index) => [racer.id, index + 1]));
+    const raceMapRacers: RaceMapRacer[] = racersForMap.map((racer) => ({ id: racer.id, kind: racer.kind, progress: racer.progress, rank: rankById.get(racer.id) ?? 1 }));
     this.callbacks.onTelemetry({
       speedKph, rpm: Math.round(5000 + ((speedKph % 42) / 42) * 8500), gear: this.playerSpeed < -1 ? "R" : this.playerSpeed < 1 ? "N" : String(gearNumber),
-      lap: this.currentLap(), laps: this.config.lapCount, position: this.currentPosition, racers: this.config.mode === "multiplayer" ? Math.max(1, this.remoteCars.size + 1) : 8,
+      lap: this.currentLap(), laps: this.config.lapCount, position: this.currentPosition, racers: this.totalRacers(),
       currentLapMs: this.phase === "racing" ? performance.now() - this.lapStartedAt : this.lapTimes[this.lapTimes.length - 1] ?? 0,
       totalTimeMs: this.phase === "racing" ? performance.now() - this.raceStartedAt : this.pendingResult?.totalTimeMs ?? 0,
       bestLapMs: this.playerState.bestLaps[this.config.trackId], fuel: this.fuel, tires: [...this.tires] as [number, number, number, number], boost: this.boost,
@@ -885,7 +908,8 @@ export class GameEngine {
       racePhase: this.phase,
       collisionPulse: THREE.MathUtils.clamp(this.collisionShake / 0.42, 0, 1),
       aiSpeedSpreadKph,
-      aiFieldSpreadMeters
+      aiFieldSpreadMeters,
+      raceMapRacers
     });
     if (this.config.mode === "multiplayer" && this.callbacks.onNetworkSnapshot) {
       const checkpoint = Math.floor(this.normalizedTrackPosition(this.playerDistance) * TRACK_BY_ID[this.config.trackId].checkpointCount);
@@ -912,9 +936,30 @@ export class GameEngine {
     const trackLength = TRACK_BY_ID[this.config.trackId].lengthKm * 1000;
     return Math.min(this.config.lapCount, Math.max(1, Math.floor(Math.max(0, this.playerDistance) / trackLength) + 1));
   }
+  private totalRacers(): number {
+    return this.config.mode === "multiplayer" ? Math.max(1, this.remoteCars.size + 1) : this.aiCars.length + 1;
+  }
   private normalizedTrackPosition(distance: number): number {
     const length = TRACK_BY_ID[this.config.trackId].lengthKm * 1000;
     return ((distance % length) + length) % length / length;
+  }
+  private remoteTrackProgress(snapshot: RaceSnapshot): number {
+    const checkpointCount = TRACK_BY_ID[this.config.trackId].checkpointCount;
+    const checkpoint = Math.max(0, Math.min(checkpointCount - 1, snapshot.checkpoint));
+    const [worldX, , worldZ] = snapshot.position;
+    let nearestProgress = checkpoint / checkpointCount;
+    let nearestDistanceSquared = Infinity;
+    const samplesPerCheckpoint = 16;
+    for (let index = 0; index <= samplesPerCheckpoint; index += 1) {
+      const progress = (checkpoint + index / samplesPerCheckpoint) / checkpointCount;
+      const point = this.curve.getPointAt(progress % 1);
+      const distanceSquared = (point.x - worldX) ** 2 + (point.z - worldZ) ** 2;
+      if (distanceSquared < nearestDistanceSquared) {
+        nearestDistanceSquared = distanceSquared;
+        nearestProgress = progress % 1;
+      }
+    }
+    return nearestProgress;
   }
   private lerpAngle(from: number, to: number, amount: number): number { return from + this.normalizeAngle(to - from) * amount; }
   private normalizeAngle(angle: number): number { return Math.atan2(Math.sin(angle), Math.cos(angle)); }

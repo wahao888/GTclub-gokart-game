@@ -5,6 +5,7 @@ import "./styles.css";
 import "./raceEffects.css";
 import "./garage.css";
 import "./trackCards.css";
+import "./raceMap.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
