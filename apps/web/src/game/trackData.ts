@@ -5,7 +5,7 @@ export const TRACK_ROAD_HALF_WIDTH = 16.6;
 export const TRACK_CURB_OUTER_WIDTH = 19;
 export const TRACK_WALL_HALF_WIDTH = 21.2;
 
-const TRACK_SEGMENTS = 520;
+const TRACK_SEGMENTS = 720;
 
 export function createTrackCurve(trackId: TrackId): THREE.CatmullRomCurve3 {
   const points = trackId === "velocity"
@@ -13,8 +13,8 @@ export function createTrackCurve(trackId: TrackId): THREE.CatmullRomCurve3 {
         [-74, 0, -25], [-48, 0, -70], [8, 0, -82], [66, 0, -62], [88, 0, -12], [75, 0, 43], [25, 0, 70], [-25, 0, 65], [-70, 0, 35]
       ]
     : [
-        [-120, 0, -30], [-92, 2, -71], [-49, 5, -101], [7, 8, -107], [62, 10, -96], [100, 8, -62], [124, 4, -18],
-        [120, 2, 30], [91, 4, 70], [49, 8, 102], [-7, 7, 107], [-61, 4, 96], [-100, 1, 62], [-124, 0, 18]
+        [-220, 0, -49], [-165, 2, -115], [-129, 5, -242], [22, 8, -307], [148, 10, -209], [169, 8, -94], [250, 4, -33],
+        [357, 2, 80], [283, 4, 196], [101, 8, 190], [-11, 7, 160], [-142, 4, 201], [-320, 1, 177], [-342, 0, 46]
       ];
   return new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)), true, "catmullrom", trackId === "velocity" ? 0.35 : 0.42);
 }
@@ -102,7 +102,7 @@ function trackFrame(curve: THREE.CatmullRomCurve3, t: number): { point: THREE.Ve
 }
 
 function addRumbleStrips(group: THREE.Group, curve: THREE.CatmullRomCurve3, accent: string): void {
-  const count = 210;
+  const count = Math.max(210, Math.ceil(curve.getLength() / 3.5));
   const length = curve.getLength() / count * 0.76;
   const geometry = new THREE.BoxGeometry(TRACK_CURB_OUTER_WIDTH - TRACK_ROAD_HALF_WIDTH - 0.12, 0.11, length);
   const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.82 });
@@ -127,7 +127,7 @@ function addRumbleStrips(group: THREE.Group, curve: THREE.CatmullRomCurve3, acce
 }
 
 function addBarriers(group: THREE.Group, curve: THREE.CatmullRomCurve3): void {
-  const count = 260;
+  const count = Math.max(260, Math.ceil(curve.getLength() / 2.9));
   const segmentLength = curve.getLength() / count * 1.06;
   const concreteMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa4ae, roughness: 0.62, metalness: 0.16 });
   const railMaterial = new THREE.MeshStandardMaterial({ color: 0xd8e0e7, roughness: 0.3, metalness: 0.78 });
@@ -146,7 +146,7 @@ function addBarriers(group: THREE.Group, curve: THREE.CatmullRomCurve3): void {
   wall.castShadow = true; wall.receiveShadow = true; rail.castShadow = true;
   group.add(wall, rail);
 
-  const postCount = 140;
+  const postCount = Math.max(140, Math.ceil(curve.getLength() / 5.2));
   const posts = new THREE.InstancedMesh(new THREE.BoxGeometry(0.18, 1.9, 0.18), railMaterial, postCount * 2);
   for (let index = 0; index < postCount; index += 1) {
     const frame = trackFrame(curve, index / postCount);

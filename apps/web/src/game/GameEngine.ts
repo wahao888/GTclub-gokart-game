@@ -253,7 +253,8 @@ export class GameEngine {
     this.playerHeading = Math.atan2(startTangent.x, startTangent.z);
     this.previousPlayerDistance = this.playerDistance;
     this.previousPlayerHeading = this.playerHeading;
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshStandardMaterial({ color: config.trackId === "velocity" ? 0x173b27 : 0x151221, roughness: 1 }));
+    const groundSize = config.trackId === "fantasia" ? 1000 : 900;
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(groundSize, groundSize), new THREE.MeshStandardMaterial({ color: config.trackId === "velocity" ? 0x173b27 : 0x151221, roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.25; ground.receiveShadow = true; this.scene.add(ground);
     this.setupLighting();
 

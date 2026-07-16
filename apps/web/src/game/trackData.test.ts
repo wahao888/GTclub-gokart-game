@@ -42,4 +42,25 @@ describe("track geometry", () => {
 
     expect(minimumRadius).toBeGreaterThan(TRACK_WALL_HALF_WIDTH);
   });
+
+  it("alternates between left and right turns around Fantasia", () => {
+    const curve = createTrackCurve("fantasia");
+    const sampleCount = 1_200;
+    const turnDirections: number[] = [];
+
+    for (let index = 0; index < sampleCount; index += 1) {
+      const before = curve.getTangentAt(((index - 0.5 + sampleCount) % sampleCount) / sampleCount);
+      const after = curve.getTangentAt(((index + 0.5) % sampleCount) / sampleCount);
+      const signedTurn = before.x * after.z - before.z * after.x;
+      if (Math.abs(signedTurn) > 0.0001) turnDirections.push(Math.sign(signedTurn));
+    }
+
+    let directionChanges = 0;
+    for (let index = 1; index < turnDirections.length; index += 1) {
+      if (turnDirections[index] !== turnDirections[index - 1]) directionChanges += 1;
+    }
+    if (turnDirections[0] !== turnDirections.at(-1)) directionChanges += 1;
+
+    expect(directionChanges).toBeGreaterThanOrEqual(6);
+  });
 });
