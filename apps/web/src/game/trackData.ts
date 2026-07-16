@@ -7,16 +7,38 @@ export const TRACK_WALL_HALF_WIDTH = 21.2;
 
 const TRACK_SEGMENTS = 720;
 
+// Clockwise trace of the official 14-turn Hungaroring diagram. The reference
+// coordinates intentionally keep the long pit straight, the T1/T2 hairpins,
+// the T6/T7 chicane and the closing T13/T14 double-right sequence in proportion.
+const HUNGARORING_REFERENCE: Array<[number, number, number]> = [
+  [613, 0, 680], [613, 1, 400], [613, 4, 130], [635, 5, 75], [680, 5, 90], [720, 4, 160], [748, 2, 260], [748, 0, 420],
+  [765, -1, 485], [810, -1, 500], [840, 0, 470], [865, 2, 400], [880, 4, 340], [960, 6, 315], [1100, 8, 290], [1250, 10, 265],
+  [1325, 11, 265], [1360, 13, 220], [1410, 15, 150], [1490, 16, 115], [1540, 16, 140], [1550, 15, 230], [1535, 13, 340], [1535, 12, 410],
+  [1505, 11, 430], [1470, 11, 420], [1430, 10, 455], [1390, 8, 520], [1375, 7, 565], [1395, 6, 620], [1430, 5, 690], [1420, 4, 735],
+  [1370, 3, 765], [1290, 2, 800], [1250, 2, 820], [1235, 1, 860], [1225, 0, 930], [1180, -1, 965], [1050, -1, 955], [900, 0, 940],
+  [820, 1, 930], [785, 2, 900], [790, 3, 825], [800, 4, 755], [775, 5, 700], [735, 5, 700], [710, 4, 745], [710, 3, 835],
+  [685, 2, 920], [650, 1, 945], [620, 0, 920], [612, 0, 850]
+];
+
 export function createTrackCurve(trackId: TrackId): THREE.CatmullRomCurve3 {
-  const points = trackId === "velocity"
-    ? [
-        [-74, 0, -25], [-48, 0, -70], [8, 0, -82], [66, 0, -62], [88, 0, -12], [75, 0, 43], [25, 0, 70], [-25, 0, 65], [-70, 0, 35]
-      ]
-    : [
-        [-220, 0, -49], [-165, 2, -115], [-129, 5, -242], [22, 8, -307], [148, 10, -209], [169, 8, -94], [250, 4, -33],
-        [357, 2, 80], [283, 4, 196], [101, 8, 190], [-11, 7, 160], [-142, 4, 201], [-320, 1, 177], [-342, 0, 46]
-      ];
-  return new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)), true, "catmullrom", trackId === "velocity" ? 0.35 : 0.42);
+  let points: Array<[number, number, number]>;
+  let tension = 0.42;
+  if (trackId === "velocity") {
+    points = [
+      [-74, 0, -25], [-48, 0, -70], [8, 0, -82], [66, 0, -62], [88, 0, -12], [75, 0, 43], [25, 0, 70], [-25, 0, 65], [-70, 0, 35]
+    ];
+    tension = 0.35;
+  } else if (trackId === "hungaroring") {
+    const scale = 2.1;
+    points = HUNGARORING_REFERENCE.map(([x, y, z]) => [(x - 1080) * scale, y, (z - 520) * scale]);
+    tension = 0.5;
+  } else {
+    points = [
+      [-220, 0, -49], [-165, 2, -115], [-129, 5, -242], [22, 8, -307], [148, 10, -209], [169, 8, -94], [250, 4, -33],
+      [357, 2, 80], [283, 4, 196], [101, 8, 190], [-11, 7, 160], [-142, 4, 201], [-320, 1, 177], [-342, 0, 46]
+    ];
+  }
+  return new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)), true, "catmullrom", tension);
 }
 
 function makeRibbon(curve: THREE.CatmullRomCurve3, halfWidth: number, segments: number, yOffset: number): THREE.BufferGeometry {
@@ -166,7 +188,8 @@ function addStartArea(group: THREE.Group, curve: THREE.CatmullRomCurve3, trackId
   for (const x of [-(TRACK_WALL_HALF_WIDTH + 0.6), TRACK_WALL_HALF_WIDTH + 0.6]) {
     const pole = new THREE.Mesh(new THREE.BoxGeometry(0.72, 8.2, 0.72), poleMaterial); pole.position.set(x, 4, 0); pole.castShadow = true; gantry.add(pole);
   }
-  const headerMaterial = new THREE.MeshStandardMaterial({ color: 0x05080e, emissive: trackId === "velocity" ? 0x00654d : 0x52126c, emissiveIntensity: 1.5, metalness: 0.35 });
+  const headerEmissive = trackId === "velocity" ? 0x00654d : trackId === "hungaroring" ? 0x6c101b : 0x52126c;
+  const headerMaterial = new THREE.MeshStandardMaterial({ color: 0x05080e, emissive: headerEmissive, emissiveIntensity: 1.5, metalness: 0.35 });
   const header = new THREE.Mesh(new THREE.BoxGeometry(TRACK_WALL_HALF_WIDTH * 2 + 2, 2.1, 0.85), headerMaterial); header.position.y = 7; header.castShadow = true; gantry.add(header);
   for (let index = 0; index < 5; index += 1) {
     const light = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), new THREE.MeshBasicMaterial({ color: 0xef3048, toneMapped: false }));
@@ -184,8 +207,9 @@ function addStartArea(group: THREE.Group, curve: THREE.CatmullRomCurve3, trackId
 
 function addTrackFurniture(group: THREE.Group, curve: THREE.CatmullRomCurve3, trackId: TrackId): void {
   const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x27313c, metalness: 0.72, roughness: 0.32 });
-  const lampMaterial = new THREE.MeshBasicMaterial({ color: trackId === "velocity" ? 0xe8fff8 : 0xd876ff, toneMapped: false });
-  const count = trackId === "velocity" ? 34 : 46;
+  const lampColor = trackId === "velocity" ? 0xe8fff8 : trackId === "hungaroring" ? 0xfff2d0 : 0xd876ff;
+  const lampMaterial = new THREE.MeshBasicMaterial({ color: lampColor, toneMapped: false });
+  const count = trackId === "velocity" ? 34 : trackId === "hungaroring" ? 28 : 46;
   const poles = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.11, 0.15, 7.5, 7), poleMaterial, count);
   const lamps = new THREE.InstancedMesh(new THREE.BoxGeometry(1.1, 0.24, 0.34), lampMaterial, count);
   const dummy = new THREE.Object3D();
@@ -198,13 +222,18 @@ function addTrackFurniture(group: THREE.Group, curve: THREE.CatmullRomCurve3, tr
   }
   poles.castShadow = true; group.add(poles, lamps);
 
-  const labels = trackId === "velocity" ? ["VELOCITY", "GATE.IO", "DRS", "FORMULA KART"] : ["FANTASIA", "GATE.IO", "NEON GP", "DRS"];
+  const labels = trackId === "velocity"
+    ? ["VELOCITY", "GATE.IO", "DRS", "FORMULA KART"]
+    : trackId === "hungaroring"
+      ? ["HUNGARORING", "HUNGARIAN GP", "BUDAPEST", "DRS"]
+      : ["FANTASIA", "GATE.IO", "NEON GP", "DRS"];
+  const accent = trackId === "velocity" ? "#21d7ad" : trackId === "hungaroring" ? "#e83b46" : "#cb53ff";
   labels.forEach((label, index) => {
     const t = [0.12, 0.36, 0.62, 0.84][index]!;
     const frame = trackFrame(curve, t);
     const side = index % 2 ? 1 : -1;
     const inward = frame.normal.clone().multiplyScalar(-side);
-    const board = new THREE.Mesh(new THREE.PlaneGeometry(9, 2.8), new THREE.MeshBasicMaterial({ map: signTexture(label, trackId === "velocity" ? "#21d7ad" : "#cb53ff"), toneMapped: false }));
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(9, 2.8), new THREE.MeshBasicMaterial({ map: signTexture(label, accent), toneMapped: false }));
     board.position.copy(frame.point).addScaledVector(frame.normal, side * (TRACK_WALL_HALF_WIDTH + 0.4)); board.position.y += 3.1;
     board.rotation.y = Math.atan2(inward.x, inward.z); group.add(board);
   });
@@ -302,28 +331,119 @@ function addFantasiaDetails(group: THREE.Group, curve: THREE.CatmullRomCurve3): 
   group.add(windows);
 }
 
+function addHungaroringDetails(group: THREE.Group, curve: THREE.CatmullRomCurve3): void {
+  const dummy = new THREE.Object3D();
+  const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x5b3c24, roughness: 1 });
+  const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x27643a, roughness: 0.96 });
+  const treeCount = 190;
+  const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.3, 0.5, 4.6, 7), trunkMaterial, treeCount);
+  const crowns = new THREE.InstancedMesh(new THREE.ConeGeometry(2.8, 8.2, 9), leafMaterial, treeCount);
+  for (let index = 0; index < treeCount; index += 1) {
+    const t = (index / treeCount + 0.003) % 1;
+    const frame = trackFrame(curve, t);
+    const side = index % 2 ? 1 : -1;
+    const nearPitStraight = t < 0.08 || t > 0.91;
+    const distance = 37 + (index % 9) * 4.6 + (nearPitStraight ? 24 : 0);
+    const scale = 0.72 + (index % 6) * 0.08;
+    dummy.position.copy(frame.point).addScaledVector(frame.normal, side * distance); dummy.position.y += 2.3 * scale;
+    dummy.rotation.set(0, index * 1.37, 0); dummy.scale.setScalar(scale); dummy.updateMatrix(); trunks.setMatrixAt(index, dummy.matrix);
+    dummy.position.y += 5.25 * scale; dummy.updateMatrix(); crowns.setMatrixAt(index, dummy.matrix);
+  }
+  trunks.castShadow = true; crowns.castShadow = true; group.add(trunks, crowns);
+
+  const hillMaterial = new THREE.MeshStandardMaterial({ color: 0x355e35, roughness: 1 });
+  const hills = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(9, 1), hillMaterial, 38);
+  for (let index = 0; index < 38; index += 1) {
+    const frame = trackFrame(curve, index / 38 + 0.011);
+    const side = index % 2 ? 1 : -1;
+    dummy.position.copy(frame.point).addScaledVector(frame.normal, side * (94 + (index % 6) * 18)); dummy.position.y += 1 + (index % 4) * 1.4;
+    dummy.rotation.set(index * 0.21, index * 0.83, index * 0.11);
+    dummy.scale.set(2.2 + index % 3 * 0.65, 0.8 + index % 4 * 0.16, 2.6 + (index + 1) % 4 * 0.5); dummy.updateMatrix(); hills.setMatrixAt(index, dummy.matrix);
+  }
+  hills.receiveShadow = true; group.add(hills);
+
+  const gravelMaterial = new THREE.MeshStandardMaterial({ color: 0x9a8865, roughness: 1, side: THREE.DoubleSide });
+  [0.065, 0.17, 0.46, 0.72, 0.885].forEach((t, index) => {
+    const frame = trackFrame(curve, t);
+    const gravel = new THREE.Mesh(new THREE.CircleGeometry(30 + index % 2 * 7, 40), gravelMaterial);
+    gravel.rotation.x = -Math.PI / 2;
+    gravel.position.copy(frame.point).addScaledVector(frame.normal, (index % 2 ? 1 : -1) * 54); gravel.position.y -= 0.1;
+    gravel.receiveShadow = true; group.add(gravel);
+  });
+
+  const standMaterial = new THREE.MeshStandardMaterial({ color: 0xcbd0d1, roughness: 0.68, metalness: 0.42 });
+  const seatMaterials = [0xd82435, 0xf4f4ef, 0x287447].map((color) => new THREE.MeshStandardMaterial({ color, roughness: 0.78 }));
+  [0.018, 0.052, 0.105, 0.84, 0.93].forEach((t, index) => {
+    const frame = trackFrame(curve, t);
+    const side = index < 3 ? 1 : -1;
+    const stand = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.BoxGeometry(11, 6.2, 42), standMaterial); base.position.y = 3; base.castShadow = true; stand.add(base);
+    for (let tier = 0; tier < 6; tier += 1) {
+      const seats = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.45, 6.5), seatMaterials[tier % seatMaterials.length]!);
+      seats.position.set(side * tier * 0.48, 1.25 + tier * 0.82, -16 + tier * 6.2); stand.add(seats);
+    }
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(15, 0.46, 46), new THREE.MeshStandardMaterial({ color: 0x26313a, metalness: 0.7, roughness: 0.38 }));
+    roof.position.set(side * 2.8, 8.2, 0); stand.add(roof);
+    stand.position.copy(frame.point).addScaledVector(frame.normal, side * 39); stand.rotation.y = frame.heading; group.add(stand);
+  });
+
+  const pit = trackFrame(curve, 0.975);
+  const pitBuilding = new THREE.Group();
+  const pitShell = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 82), new THREE.MeshStandardMaterial({ color: 0xe4e2dc, roughness: 0.58, metalness: 0.22 }));
+  pitShell.position.y = 5; pitShell.castShadow = true; pitBuilding.add(pitShell);
+  const pitGlass = new THREE.Mesh(new THREE.BoxGeometry(14.2, 2.6, 76), new THREE.MeshStandardMaterial({ color: 0x233d47, emissive: 0x102c34, emissiveIntensity: 0.38, roughness: 0.2, metalness: 0.4 }));
+  pitGlass.position.y = 6.2; pitBuilding.add(pitGlass);
+  const pitRoof = new THREE.Mesh(new THREE.BoxGeometry(18, 0.65, 86), new THREE.MeshStandardMaterial({ color: 0xbfc4c5, metalness: 0.72, roughness: 0.35 }));
+  pitRoof.position.y = 10.3; pitBuilding.add(pitRoof);
+  pitBuilding.position.copy(pit.point).addScaledVector(pit.normal, -37); pitBuilding.rotation.y = pit.heading; group.add(pitBuilding);
+
+  const tower = new THREE.Group();
+  const towerMaterial = new THREE.MeshStandardMaterial({ color: 0xe6e7e2, metalness: 0.5, roughness: 0.48 });
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.4, 25, 10), towerMaterial); mast.position.y = 12.5; mast.castShadow = true; tower.add(mast);
+  const tank = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 4.2, 8, 14), new THREE.MeshStandardMaterial({ color: 0xd52d3d, roughness: 0.62 })); tank.position.y = 26; tank.castShadow = true; tower.add(tank);
+  tower.position.copy(pit.point).addScaledVector(pit.normal, -72); group.add(tower);
+
+  const flagPoleMaterial = new THREE.MeshStandardMaterial({ color: 0xc8ced1, metalness: 0.75, roughness: 0.3 });
+  const flagColors = [0xce2939, 0xf1f0e8, 0x287244];
+  [0.01, 0.085, 0.31, 0.57, 0.79, 0.945].forEach((t, index) => {
+    const frame = trackFrame(curve, t);
+    const side = index % 2 ? 1 : -1;
+    const flag = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 9, 7), flagPoleMaterial); pole.position.y = 4.5; flag.add(pole);
+    flagColors.forEach((color, stripe) => {
+      const fabric = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.62), new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }));
+      fabric.position.set(1.85, 8.5 - stripe * 0.62, 0); flag.add(fabric);
+    });
+    flag.position.copy(frame.point).addScaledVector(frame.normal, side * 29); flag.rotation.y = frame.heading; group.add(flag);
+  });
+}
+
 export function createTrackScene(trackId: TrackId, weather: string): { group: THREE.Group; curve: THREE.CatmullRomCurve3; rain?: THREE.Points } {
   const group = new THREE.Group();
   const curve = createTrackCurve(trackId);
+  const segments = trackId === "hungaroring" ? 1_440 : TRACK_SEGMENTS;
   const wet = weather === "rain";
   const roadMaterial = new THREE.MeshStandardMaterial({ color: wet ? 0x1c242b : 0x30343a, roughness: wet ? 0.25 : 0.84, metalness: wet ? 0.3 : 0.04 });
-  const road = new THREE.Mesh(makeRibbon(curve, TRACK_ROAD_HALF_WIDTH, TRACK_SEGMENTS, 0.11), roadMaterial); road.receiveShadow = true; group.add(road);
+  const road = new THREE.Mesh(makeRibbon(curve, TRACK_ROAD_HALF_WIDTH, segments, 0.11), roadMaterial); road.receiveShadow = true; group.add(road);
 
-  const rubber = new THREE.Mesh(makeRibbon(curve, 2.7, TRACK_SEGMENTS, 0.135), new THREE.MeshStandardMaterial({ color: 0x171b20, transparent: true, opacity: wet ? 0.28 : 0.42, roughness: 0.68 }));
+  const rubber = new THREE.Mesh(makeRibbon(curve, 2.7, segments, 0.135), new THREE.MeshStandardMaterial({ color: 0x171b20, transparent: true, opacity: wet ? 0.28 : 0.42, roughness: 0.68 }));
   rubber.receiveShadow = true; group.add(rubber);
 
-  const curbAccent = trackId === "velocity" ? "#e5343d" : "#b64ee8";
+  const curbAccent = trackId === "velocity" ? "#e5343d" : trackId === "hungaroring" ? "#d92335" : "#b64ee8";
   const curbMaterial = new THREE.MeshStandardMaterial({ map: checkerTexture("#f4f5f6", curbAccent), roughness: wet ? 0.48 : 0.82, side: THREE.DoubleSide });
-  const shoulderMaterial = new THREE.MeshStandardMaterial({ color: trackId === "velocity" ? 0x53725c : 0x392842, roughness: 0.96, side: THREE.DoubleSide });
+  const shoulderColor = trackId === "velocity" ? 0x53725c : trackId === "hungaroring" ? 0x397044 : 0x392842;
+  const shoulderMaterial = new THREE.MeshStandardMaterial({ color: shoulderColor, roughness: 0.96, side: THREE.DoubleSide });
   for (const side of [-1, 1] as const) {
-    const curb = new THREE.Mesh(makeSideBand(curve, TRACK_ROAD_HALF_WIDTH, TRACK_CURB_OUTER_WIDTH, side, TRACK_SEGMENTS, 0.13), curbMaterial); curb.receiveShadow = true; group.add(curb);
-    const shoulder = new THREE.Mesh(makeSideBand(curve, TRACK_CURB_OUTER_WIDTH, TRACK_WALL_HALF_WIDTH, side, TRACK_SEGMENTS, 0.05), shoulderMaterial); shoulder.receiveShadow = true; group.add(shoulder);
+    const curb = new THREE.Mesh(makeSideBand(curve, TRACK_ROAD_HALF_WIDTH, TRACK_CURB_OUTER_WIDTH, side, segments, 0.13), curbMaterial); curb.receiveShadow = true; group.add(curb);
+    const shoulder = new THREE.Mesh(makeSideBand(curve, TRACK_CURB_OUTER_WIDTH, TRACK_WALL_HALF_WIDTH, side, segments, 0.05), shoulderMaterial); shoulder.receiveShadow = true; group.add(shoulder);
   }
   addRumbleStrips(group, curve, curbAccent);
   addBarriers(group, curve);
   addStartArea(group, curve, trackId);
   addTrackFurniture(group, curve, trackId);
-  if (trackId === "velocity") addVelocityDetails(group, curve); else addFantasiaDetails(group, curve);
+  if (trackId === "velocity") addVelocityDetails(group, curve);
+  else if (trackId === "hungaroring") addHungaroringDetails(group, curve);
+  else addFantasiaDetails(group, curve);
 
   let rain: THREE.Points | undefined;
   if (weather === "rain") {

@@ -1,0 +1,31 @@
+.track-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.track-card {
+  grid-template-columns: 1fr;
+  grid-template-rows: 170px auto;
+  min-height: 375px;
+}
+
+.track-info {
+  padding: 24px;
+}
+
+.track-info dl {
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.hungaroring .track-art {
+  background: radial-gradient(circle, #4f3028, #18251a);
+}
+
+.hungaroring .track-art span {
+  color: #ef4753;
+}
+
+.track-toggle {
+  grid-template-columns: repeat(3, 1fr);
+}

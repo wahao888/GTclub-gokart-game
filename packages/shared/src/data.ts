@@ -18,7 +18,8 @@ export const VEHICLE_BY_ID = Object.fromEntries(VEHICLES.map((vehicle) => [vehic
 
 export const TRACKS: TrackSpec[] = [
   { id: "fantasia", name: "Circuit de Fantasia", shortName: "FANTASIA", laps: 3, lengthKm: 2.1, turns: 14, checkpointCount: 12, difficulty: "中等", theme: "黃昏霓虹山城", accent: "#d56cff" },
-  { id: "velocity", name: "Velocity Park Speedway", shortName: "VELOCITY", laps: 5, lengthKm: 1.35, turns: 8, checkpointCount: 8, difficulty: "簡單", theme: "晴日公園賽車場", accent: "#23e6b6" }
+  { id: "velocity", name: "Velocity Park Speedway", shortName: "VELOCITY", laps: 5, lengthKm: 1.35, turns: 8, checkpointCount: 8, difficulty: "簡單", theme: "晴日公園賽車場", accent: "#23e6b6" },
+  { id: "hungaroring", name: "Hungaroring", shortName: "HUNGARIAN GP", laps: 1, lengthKm: 4.381, turns: 14, checkpointCount: 14, difficulty: "中等", theme: "布達佩斯丘陵經典賽道", accent: "#e83b46" }
 ];
 
 export const TRACK_BY_ID = Object.fromEntries(TRACKS.map((track) => [track.id, track])) as Record<TrackSpec["id"], TrackSpec>;

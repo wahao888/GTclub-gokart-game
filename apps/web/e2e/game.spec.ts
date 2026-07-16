@@ -8,12 +8,16 @@ test("starts a WebGL race and opens the pause menu", async ({ page }) => {
 
   await page.getByRole("button", { name: "開始比賽 →" }).click();
   await expect(page.getByRole("heading", { name: "建立大獎賽" })).toBeVisible();
-  await expect(page.locator(".track-map")).toHaveCount(2);
+  await expect(page.locator(".track-map")).toHaveCount(3);
   const fantasiaMap = await page.locator('.track-map[data-track-id="fantasia"] .track-map-road').getAttribute("d");
   const velocityMap = await page.locator('.track-map[data-track-id="velocity"] .track-map-road').getAttribute("d");
+  const hungaroringMap = await page.locator('.track-map[data-track-id="hungaroring"] .track-map-road').getAttribute("d");
   expect(fantasiaMap?.length).toBeGreaterThan(500);
   expect(velocityMap?.length).toBeGreaterThan(500);
+  expect(hungaroringMap?.length).toBeGreaterThan(500);
   expect(fantasiaMap).not.toBe(velocityMap);
+  expect(hungaroringMap).not.toBe(fantasiaMap);
+  expect(hungaroringMap).not.toBe(velocityMap);
   await page.getByRole("button", { name: "進入發車區 →" }).click();
 
   await expect(page.locator(".game-canvas canvas")).toBeVisible();

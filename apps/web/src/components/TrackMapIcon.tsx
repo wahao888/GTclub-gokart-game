@@ -39,7 +39,8 @@ function buildTrackMap(trackId: TrackId): TrackMapGeometry {
 
 const TRACK_MAPS: Record<TrackId, TrackMapGeometry> = {
   fantasia: buildTrackMap("fantasia"),
-  velocity: buildTrackMap("velocity")
+  velocity: buildTrackMap("velocity"),
+  hungaroring: buildTrackMap("hungaroring")
 };
 
 export function TrackMapIcon({ trackId }: { trackId: TrackId }) {

@@ -1,6 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { TRACKS } from "@f1-kart/shared";
+import { TRACK_BY_ID, TRACKS } from "@f1-kart/shared";
 import { TRACK_CURB_OUTER_WIDTH, TRACK_ROAD_HALF_WIDTH, TRACK_WALL_HALF_WIDTH, createTrackCurve } from "./trackData";
+
+function minimumPlanarRadius(curve: ReturnType<typeof createTrackCurve>, sampleCount = 1_200): number {
+  let minimumRadius = Infinity;
+  for (let index = 0; index < sampleCount; index += 1) {
+    const previous = curve.getPointAt(((index - 1 + sampleCount) % sampleCount) / sampleCount);
+    const current = curve.getPointAt(index / sampleCount);
+    const next = curve.getPointAt(((index + 1) % sampleCount) / sampleCount);
+    const previousDistance = Math.hypot(previous.x - current.x, previous.z - current.z);
+    const nextDistance = Math.hypot(next.x - current.x, next.z - current.z);
+    const chordDistance = Math.hypot(next.x - previous.x, next.z - previous.z);
+    const triangleArea = Math.abs(
+      (current.x - previous.x) * (next.z - previous.z) -
+      (current.z - previous.z) * (next.x - previous.x)
+    ) / 2;
+    const radius = triangleArea === 0
+      ? Infinity
+      : previousDistance * nextDistance * chordDistance / (4 * triangleArea);
+    minimumRadius = Math.min(minimumRadius, radius);
+  }
+  return minimumRadius;
+}
 
 describe("track geometry", () => {
   it.each(TRACKS)("creates a smooth closed curve for $name", (track) => {
@@ -20,27 +41,26 @@ describe("track geometry", () => {
 
   it("keeps Fantasia turns wider than the complete road and shoulder", () => {
     const curve = createTrackCurve("fantasia");
-    const sampleCount = 1_200;
-    let minimumRadius = Infinity;
+    expect(minimumPlanarRadius(curve)).toBeGreaterThan(TRACK_WALL_HALF_WIDTH);
+  });
 
-    for (let index = 0; index < sampleCount; index += 1) {
-      const previous = curve.getPointAt(((index - 1 + sampleCount) % sampleCount) / sampleCount);
-      const current = curve.getPointAt(index / sampleCount);
-      const next = curve.getPointAt(((index + 1) % sampleCount) / sampleCount);
-      const previousDistance = Math.hypot(previous.x - current.x, previous.z - current.z);
-      const nextDistance = Math.hypot(next.x - current.x, next.z - current.z);
-      const chordDistance = Math.hypot(next.x - previous.x, next.z - previous.z);
-      const triangleArea = Math.abs(
-        (current.x - previous.x) * (next.z - previous.z) -
-        (current.z - previous.z) * (next.x - previous.x)
-      ) / 2;
-      const radius = triangleArea === 0
-        ? Infinity
-        : previousDistance * nextDistance * chordDistance / (4 * triangleArea);
-      minimumRadius = Math.min(minimumRadius, radius);
-    }
+  it("keeps the Hungaroring 4.381 km, 14-turn race to one sub-three-minute lap", () => {
+    const track = TRACK_BY_ID.hungaroring;
+    expect(track.lengthKm).toBe(4.381);
+    expect(track.turns).toBe(14);
+    expect(track.checkpointCount).toBe(14);
+    expect(track.laps).toBe(1);
+  });
 
-    expect(minimumRadius).toBeGreaterThan(TRACK_WALL_HALF_WIDTH);
+  it("preserves the Hungaroring footprint without pinching the widened kart road", () => {
+    const curve = createTrackCurve("hungaroring");
+    const points = curve.getSpacedPoints(800);
+    const width = Math.max(...points.map((point) => point.x)) - Math.min(...points.map((point) => point.x));
+    const height = Math.max(...points.map((point) => point.z)) - Math.min(...points.map((point) => point.z));
+    expect(curve.getLength()).toBeGreaterThan(8_500);
+    expect(width / height).toBeGreaterThan(0.95);
+    expect(width / height).toBeLessThan(1.15);
+    expect(minimumPlanarRadius(curve, 3_600)).toBeGreaterThan(TRACK_WALL_HALF_WIDTH);
   });
 
   it("alternates between left and right turns around Fantasia", () => {

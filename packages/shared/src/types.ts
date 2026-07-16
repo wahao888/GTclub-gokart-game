@@ -9,7 +9,7 @@ export type VehicleId =
   | "titan-gt-3"
   | "zenith-sfx-400";
 
-export type TrackId = "fantasia" | "velocity";
+export type TrackId = "fantasia" | "velocity" | "hungaroring";
 export type Difficulty = "easy" | "normal" | "hard";
 export type Weather = "clear" | "cloudy" | "rain";
 export type RaceMode = "single" | "multiplayer" | "mock";

@@ -242,7 +242,8 @@ export class GameEngine {
     this.container.appendChild(this.renderer.domElement);
     const sky = weatherVisuals.skyColor;
     this.scene.background = new THREE.Color(sky);
-    this.scene.fog = new THREE.FogExp2(sky, (config.trackId === "fantasia" ? 0.0045 : 0.003) * weatherVisuals.fogMultiplier);
+    const fogDensity = config.trackId === "fantasia" ? 0.0045 : config.trackId === "hungaroring" ? 0.00145 : 0.003;
+    this.scene.fog = new THREE.FogExp2(sky, fogDensity * weatherVisuals.fogMultiplier);
     this.rng = seededRandom(config.seed + 17);
     this.audio = new EngineAudio(volume);
     if (config.mode === "multiplayer") this.playerDistance = -42 - Math.max(0, config.gridPosition ?? 0) * 12;
@@ -253,8 +254,9 @@ export class GameEngine {
     this.playerHeading = Math.atan2(startTangent.x, startTangent.z);
     this.previousPlayerDistance = this.playerDistance;
     this.previousPlayerHeading = this.playerHeading;
-    const groundSize = config.trackId === "fantasia" ? 1000 : 900;
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(groundSize, groundSize), new THREE.MeshStandardMaterial({ color: config.trackId === "velocity" ? 0x173b27 : 0x151221, roughness: 1 }));
+    const groundSize = config.trackId === "hungaroring" ? 2_600 : config.trackId === "fantasia" ? 1000 : 900;
+    const groundColor = config.trackId === "velocity" ? 0x173b27 : config.trackId === "hungaroring" ? 0x315d36 : 0x151221;
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(groundSize, groundSize), new THREE.MeshStandardMaterial({ color: groundColor, roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.25; ground.receiveShadow = true; this.scene.add(ground);
     this.setupLighting();
 
@@ -297,7 +299,8 @@ export class GameEngine {
     const weather = WEATHER_VISUALS[this.config.weather];
     const ambient = new THREE.HemisphereLight(weather.hemisphereSky, weather.hemisphereGround, weather.hemisphereIntensity); this.scene.add(ambient);
     const fill = new THREE.AmbientLight(weather.fillColor, weather.fillIntensity); this.scene.add(fill);
-    const sun = new THREE.DirectionalLight(this.config.trackId === "fantasia" ? 0xffad78 : 0xffffff, weather.keyIntensity);
+    const sunColor = this.config.trackId === "fantasia" ? 0xffad78 : this.config.trackId === "hungaroring" ? 0xfff4d6 : 0xffffff;
+    const sun = new THREE.DirectionalLight(sunColor, weather.keyIntensity);
     sun.position.set(-65, 100, 45); sun.castShadow = this.quality !== "low"; sun.shadow.mapSize.set(this.quality === "high" ? 2048 : 1024, this.quality === "high" ? 2048 : 1024);
     sun.shadow.camera.left = -110; sun.shadow.camera.right = 110; sun.shadow.camera.top = 110; sun.shadow.camera.bottom = -110; this.scene.add(sun);
   }

@@ -1,6 +1,6 @@
 # Formula Kart
 
-F1 風格 Q 版 WebGL／Three.js 賽車遊戲。包含兩條賽道、9 台賽車、三種 AI、動態天氣、漂移與加速、車庫商城、44 項成就，以及 WebSocket 多人房間與 Mock fallback。
+F1 風格 Q 版 WebGL／Three.js 賽車遊戲。包含三條賽道、9 台賽車、三種 AI、動態天氣、漂移與加速、車庫商城、44 項成就，以及 WebSocket 多人房間與 Mock fallback。
 
 ## 啟動
 

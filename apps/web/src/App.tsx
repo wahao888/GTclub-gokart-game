@@ -77,7 +77,7 @@ function Home({ player, navigate }: { player: PlayerStateV1; navigate: (screen: 
       <div className="hero-car"><div className="car-number">01</div><CarShowcase vehicleId={player.selectedVehicleId} livery={player.selectedLiveries[player.selectedVehicleId] ?? 0}/><div className="selected-car"><small>SELECTED MACHINE</small><b>{selected.name}</b><span>{selected.teamName} · {selected.driver}</span></div></div>
     </section>
     <section className="dashboard-grid">
-      <button className="feature-card race-card" onClick={() => navigate("setup")}><span className="card-index">01</span><div><small>GRAND PRIX</small><h2>單人錦標賽</h2><p>兩條賽道 · 三種難度 · 動態天氣</p></div><b>進入 →</b></button>
+      <button className="feature-card race-card" onClick={() => navigate("setup")}><span className="card-index">01</span><div><small>GRAND PRIX</small><h2>單人錦標賽</h2><p>三條賽道 · 三種難度 · 動態天氣</p></div><b>進入 →</b></button>
       <button className="feature-card" onClick={() => navigate("multiplayer")}><span className="status-dot online"/><div><small>LIVE PADDOCK</small><h2>多人房間</h2><p>WebSocket 即時連線 · 最多 8 人</p></div><b>連線 →</b></button>
       <div className="career-card"><div><small>DRIVER PROGRESS</small><b>LEVEL {player.level}</b></div><div className="xp-track"><i style={{ width: `${player.xp / xpForNextLevel(player.level) * 100}%` }}/></div><p>{player.xp} / {xpForNextLevel(player.level)} XP</p><div className="mini-stats"><span><b>{player.stats.wins}</b>勝利</span><span><b>{player.stats.races}</b>完賽</span><span><b>{Object.keys(player.unlockedAchievements).length}</b>成就</span></div></div>
     </section>

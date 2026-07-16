@@ -61,3 +61,13 @@
 .fantasia.selected .track-map {
   filter: drop-shadow(0 0 15px #db73ff);
 }
+
+.hungaroring .track-map {
+  color: #ef4753;
+  filter: drop-shadow(0 0 10px #ef47534a);
+}
+
+.hungaroring:hover .track-map,
+.hungaroring.selected .track-map {
+  filter: drop-shadow(0 0 15px #ef4753);
+}
