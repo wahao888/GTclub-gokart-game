@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { finishCoastSpeed, getHandlingWorldScale, getSpeedSensation, resolveKartCollision, resolveWallContact, wallEscapeHeading } from "./physics";
+import { finishCoastSpeed, getHandlingWorldScale, getSpeedSensation, getSteeringCalibration, getTrackPaceMultiplier, resolveKartCollision, resolveWallContact, wallEscapeHeading } from "./physics";
 
 describe("vehicle physics helpers", () => {
   it("does not let an enlarged circuit mesh amplify steering sensitivity", () => {
@@ -8,20 +8,38 @@ describe("vehicle physics helpers", () => {
     expect(getHandlingWorldScale(2.084)).toBe(0.95);
   });
 
-  it("makes high speed visually distinct from low speed", () => {
-    const low = getSpeedSensation(45);
-    const fast = getSpeedSensation(280);
-    expect(fast.fov - low.fov).toBeGreaterThan(20);
-    expect(fast.chaseDistance - low.chaseDistance).toBeGreaterThan(5);
-    expect(fast.intensity).toBeGreaterThan(0.9);
+  it("makes Hungaroring keyboard steering slower and less abrupt", () => {
+    const fantasia = getSteeringCalibration("fantasia");
+    const hungaroring = getSteeringCalibration("hungaroring");
+    expect(hungaroring.inputResponse).toBeLessThan(fantasia.inputResponse);
+    expect(hungaroring.yawMultiplier).toBeLessThan(fantasia.yawMultiplier * 0.55);
   });
 
-  it("keeps the kart closer during nitro while adding a wider speed lens", () => {
+  it("slows Hungaroring pace without changing the other circuits", () => {
+    expect(getTrackPaceMultiplier("fantasia")).toBe(1);
+    expect(getTrackPaceMultiplier("velocity")).toBe(1);
+    expect(getTrackPaceMultiplier("hungaroring")).toBe(0.82);
+  });
+
+  it("keeps camera composition fixed while high speed adds vibration", () => {
+    const low = getSpeedSensation(45);
+    const fast = getSpeedSensation(280);
+    expect(fast.fov).toBe(low.fov);
+    expect(fast.chaseDistance).toBe(low.chaseDistance);
+    expect(fast.cameraHeight).toBe(low.cameraHeight);
+    expect(fast.lookAhead).toBe(low.lookAhead);
+    expect(fast.intensity).toBeGreaterThan(0.9);
+    expect(fast.shake).toBeGreaterThan(low.shake);
+  });
+
+  it("keeps a fixed camera during nitro while adding stronger vibration", () => {
     const fast = getSpeedSensation(280);
     const nitro = getSpeedSensation(280, true);
-    expect(nitro.chaseDistance).toBeLessThan(fast.chaseDistance - 1.2);
-    expect(nitro.cameraHeight).toBeLessThan(fast.cameraHeight);
-    expect(nitro.fov).toBeGreaterThan(fast.fov + 6);
+    expect(nitro.chaseDistance).toBe(fast.chaseDistance);
+    expect(nitro.cameraHeight).toBe(fast.cameraHeight);
+    expect(nitro.fov).toBe(fast.fov);
+    expect(nitro.lookAhead).toBe(fast.lookAhead);
+    expect(nitro.shake).toBeGreaterThan(fast.shake);
   });
 
   it("coasts before progressively applying the automatic finish brake", () => {

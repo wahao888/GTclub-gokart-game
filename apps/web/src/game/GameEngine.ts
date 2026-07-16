@@ -16,7 +16,7 @@ import {
 import { createKart } from "./carFactory";
 import { createAiDriverProfiles, type AiDriverProfile } from "./aiDriver";
 import { DriftEffects } from "./DriftEffects";
-import { finishCoastSpeed, getHandlingWorldScale, getSpeedSensation, resolveKartCollision, resolveWallContact, wallEscapeHeading } from "./physics";
+import { finishCoastSpeed, getHandlingWorldScale, getSpeedSensation, getSteeringCalibration, getTrackPaceMultiplier, resolveKartCollision, resolveWallContact, wallEscapeHeading } from "./physics";
 import { TRACK_CURB_OUTER_WIDTH, TRACK_ROAD_HALF_WIDTH, TRACK_WALL_HALF_WIDTH, createTrackScene } from "./trackData";
 import { WEATHER_VISUALS } from "./weatherVisuals";
 
@@ -401,7 +401,9 @@ export class GameEngine {
     const steer = (this.keys.has("d") || this.keys.has("arrowright") ? 1 : 0) - (this.keys.has("a") || this.keys.has("arrowleft") ? 1 : 0);
     const drifting = this.keys.has(" ") && Math.abs(steer) > 0 && Math.abs(this.playerSpeed) > 13.9;
     const speedKph = Math.abs(this.playerSpeed) * 3.6;
-    const normalizedSpeed = Math.min(1, speedKph / Math.max(1, stats.maxSpeedKph));
+    const trackPaceMultiplier = getTrackPaceMultiplier(this.config.trackId);
+    const trackMaxSpeedKph = stats.maxSpeedKph * trackPaceMultiplier;
+    const normalizedSpeed = Math.min(1, speedKph / Math.max(1, trackMaxSpeedKph));
 
     this.defensiveWake = false;
     if (this.config.difficulty === "hard") {
@@ -411,13 +413,13 @@ export class GameEngine {
     const inDrsZone = (t > 0.13 && t < 0.27) || (t > 0.59 && t < 0.72);
     const ahead = this.aiCars.filter((ai) => ai.distance > this.playerDistance).sort((a, b) => a.distance - b.distance)[0];
     this.drs = this.currentLap() >= 2 && this.config.weather !== "rain" && inDrsZone && !!ahead && (ahead.distance - this.playerDistance) / Math.max(20, this.playerSpeed) <= 1;
-    let topSpeed = stats.maxSpeedKph / 3.6;
+    let topSpeed = trackMaxSpeedKph / 3.6;
     if (this.boostTimer > 0) topSpeed *= 1.22;
     else if (this.miniBoostTimer > 0) topSpeed *= 1.08;
     if (this.drs) topSpeed *= 1.05;
 
     if (throttle) {
-      let acceleration = stats.accelerationRate * (1 - normalizedSpeed * 0.72);
+      let acceleration = stats.accelerationRate * trackPaceMultiplier * (1 - normalizedSpeed * 0.72);
       if (this.boostTimer > 0) acceleration *= 2.3;
       else if (this.miniBoostTimer > 0) acceleration *= 1.5;
       if (this.defensiveWake) acceleration *= 0.96;
@@ -440,13 +442,14 @@ export class GameEngine {
     const trackTangent = this.curve.getTangentAt(this.normalizedTrackPosition(this.playerDistance)).normalize();
     const trackNormal = new THREE.Vector3(-trackTangent.z, 0, trackTangent.x).normalize();
     const trackHeading = Math.atan2(trackTangent.x, trackTangent.z);
+    const steeringCalibration = getSteeringCalibration(this.config.trackId);
     const wallCenterLimit = TRACK_WALL_HALF_WIDTH - 1.85;
     const nearContactWall = this.wallContactSide !== 0 && Math.abs(this.lateral) > wallCenterLimit - 1.1;
     const reversingFromWall = this.playerSpeed < -0.5 || (brake && this.playerSpeed <= 1);
 
     // Smooth keyboard input into a front-wheel steering angle, then turn the body
     // with a bicycle-style yaw rate. The track only provides a weak heading assist.
-    const steeringResponse = steer === 0 ? 10 : 8;
+    const steeringResponse = steer === 0 ? 10 : steeringCalibration.inputResponse;
     this.steeringInput += THREE.MathUtils.clamp(steer - this.steeringInput, -steeringResponse * dt, steeringResponse * dt);
     const maximumSteeringAngle = THREE.MathUtils.lerp(0.5, 0.13, normalizedSpeed);
     const steeringAngle = this.steeringInput * maximumSteeringAngle;
@@ -455,7 +458,7 @@ export class GameEngine {
     // needs a little tyre scrub so steering input can actually free its nose.
     const steeringVisualSpeed = nearContactWall ? Math.max(visualSpeed, 4.8) : visualSpeed;
     let yawRate = steeringVisualSpeed / 3.8 * Math.tan(steeringAngle) * (0.92 + stats.handling * 0.028);
-    yawRate = THREE.MathUtils.clamp(yawRate, -1.65, 1.65) * Math.sign(this.playerSpeed || 1);
+    yawRate = THREE.MathUtils.clamp(yawRate, -1.65, 1.65) * steeringCalibration.yawMultiplier * Math.sign(this.playerSpeed || 1);
     this.playerHeading -= yawRate * (drifting ? 1.28 : 1) * dt;
 
     const headingError = this.normalizeAngle(this.playerHeading - trackHeading);
@@ -560,6 +563,7 @@ export class GameEngine {
 
   private updateAi(dt: number): void {
     const difficulty = this.config.difficulty;
+    const trackPaceMultiplier = getTrackPaceMultiplier(this.config.trackId);
     const coeff = difficulty === "easy" ? 0.86 : difficulty === "normal" ? 0.95 : 1.03;
     const chance = difficulty === "easy" ? 0.3 : difficulty === "normal" ? 0.16 : 0.08;
     const reactionTime = difficulty === "easy" ? 0.22 : difficulty === "normal" ? 0.14 : 0.08;
@@ -631,7 +635,7 @@ export class GameEngine {
       const competitionAssist = THREE.MathUtils.clamp((this.playerDistance - ai.distance) / 140, -1, 1) * 0.015;
       const normalizedCornerSkill = THREE.MathUtils.clamp((ai.profile.cornerSkill - 0.91) / 0.165, 0, 1);
       const cornerPenalty = THREE.MathUtils.lerp(1.06, 0.79, normalizedCornerSkill);
-      let target = (61 + carBias) * coeff * (ai.profile.paceFactor + formVariation + competitionAssist) * (1 - corner * cornerPenalty) - (ai.mistakeTimer > 0 ? 5 + ai.profile.mistakeFactor * 2.5 : 0);
+      let target = (61 + carBias) * coeff * (ai.profile.paceFactor + formVariation + competitionAssist) * (1 - corner * cornerPenalty) * trackPaceMultiplier - (ai.mistakeTimer > 0 ? 5 + ai.profile.mistakeFactor * 2.5 : 0);
       if (ahead) {
         const gap = ahead.distance - ai.distance;
         const alongsidePassingLane = Math.abs(ahead.lateral - ai.lateral) > 3.45;

@@ -351,17 +351,6 @@ function addHungaroringDetails(group: THREE.Group, curve: THREE.CatmullRomCurve3
   }
   trunks.castShadow = true; crowns.castShadow = true; group.add(trunks, crowns);
 
-  const hillMaterial = new THREE.MeshStandardMaterial({ color: 0x355e35, roughness: 1 });
-  const hills = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(9, 1), hillMaterial, 38);
-  for (let index = 0; index < 38; index += 1) {
-    const frame = trackFrame(curve, index / 38 + 0.011);
-    const side = index % 2 ? 1 : -1;
-    dummy.position.copy(frame.point).addScaledVector(frame.normal, side * (94 + (index % 6) * 18)); dummy.position.y += 1 + (index % 4) * 1.4;
-    dummy.rotation.set(index * 0.21, index * 0.83, index * 0.11);
-    dummy.scale.set(2.2 + index % 3 * 0.65, 0.8 + index % 4 * 0.16, 2.6 + (index + 1) % 4 * 0.5); dummy.updateMatrix(); hills.setMatrixAt(index, dummy.matrix);
-  }
-  hills.receiveShadow = true; group.add(hills);
-
   const gravelMaterial = new THREE.MeshStandardMaterial({ color: 0x9a8865, roughness: 1, side: THREE.DoubleSide });
   [0.065, 0.17, 0.46, 0.72, 0.885].forEach((t, index) => {
     const frame = trackFrame(curve, t);

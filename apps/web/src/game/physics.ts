@@ -1,3 +1,5 @@
+import type { TrackId } from "@f1-kart/shared";
+
 export interface SpeedSensation {
   intensity: number;
   fov: number;
@@ -53,21 +55,37 @@ export function getHandlingWorldScale(worldScale: number): number {
   return clamp(worldScale, 0.25, 0.95);
 }
 
+export interface SteeringCalibration {
+  inputResponse: number;
+  yawMultiplier: number;
+}
+
+export function getSteeringCalibration(trackId: TrackId): SteeringCalibration {
+  // Hungaroring has a dense sequence of technical corners. Keyboard input is
+  // deliberately ramped more slowly and its final yaw is reduced so a short
+  // tap cannot snap the kart across the widened road.
+  return trackId === "hungaroring"
+    ? { inputResponse: 3.6, yawMultiplier: 0.52 }
+    : { inputResponse: 8, yawMultiplier: 1 };
+}
+
+export function getTrackPaceMultiplier(trackId: TrackId): number {
+  // The Hungaroring mesh is visually larger than its timing distance. A lower
+  // pace keeps the perceived speed readable while retaining a sub-three-minute lap.
+  return trackId === "hungaroring" ? 0.82 : 1;
+}
+
 export function getSpeedSensation(speedKph: number, nitro = false, miniBoost = false): SpeedSensation {
-  // Perception ramps non-linearly: town speeds stay calm while 250+ km/h opens
-  // the lens and pulls the chase camera back. Nitro widens the lens and adds
-  // shake, but deliberately moves the camera closer so the kart stays large
-  // and powerful instead of appearing to shrink away from the player.
+  // Perception ramps non-linearly through vibration while the lens, position
+  // and look target stay fixed, keeping the kart at one screen distance.
   const normalized = smoothstep((Math.max(0, speedKph) - 25) / 265);
   const intensity = Math.pow(normalized, 0.82);
-  const boostFov = nitro ? 7 : miniBoost ? 3 : 0;
-  const boostCameraCompensation = nitro ? 1.45 : miniBoost ? 0.35 : 0;
   return {
     intensity,
-    fov: 58 + intensity * 25 + boostFov,
-    chaseDistance: 8.4 + intensity * 5.8 - boostCameraCompensation,
-    cameraHeight: 4.05 + intensity * 1.05 - (nitro ? 0.12 : 0),
-    lookAhead: 5.5 + intensity * 10,
+    fov: 58,
+    chaseDistance: 8.4,
+    cameraHeight: 4.05,
+    lookAhead: 5.5,
     shake: Math.max(0, (intensity - 0.58) / 0.42) * 0.045 + (nitro ? 0.065 : miniBoost ? 0.018 : 0)
   };
 }
